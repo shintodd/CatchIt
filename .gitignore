@@ -1,0 +1,22 @@
+
+keystore/
+keystore.properties
+*.jks
+*.keystore
+.e2e/
+
+# Build output
+build/
+.gradle/
+.kotlin/
+captures/
+*.hprof
+
+# Local tooling
+local.properties
+.idea/
+e2e/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CatchIt Real Map</title>
+  <!-- Bundled locally: no network fetch, so the map paints on first frame. -->
+  <link rel="stylesheet" href="leaflet/leaflet.css" />
+  <script src="leaflet/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body, #map {
+      width: 100%;
+      height: 100%;
+      background: #090C10;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+    }
+
+    /* Floating Map Controls (Top Right) */
+    .map-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .map-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(20, 34, 26, 0.92);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      border-radius: 10px;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transition: all 0.15s ease;
+    }
+    .map-btn:active { transform: scale(0.92); background: rgba(74,222,128,0.25); }
+    .map-btn.active { background: #4ADE80; color: #0C140F; border-color: #4ADE80; }
+
+    /* Route Tag Badge (Top Left) */
+    .route-badge-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: rgba(12, 20, 15, 0.94);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      border-radius: 10px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .route-badge-overlay .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ADE80;
+      box-shadow: 0 0 8px #4ADE80;
+    }
+
+    /* Live Bus Marker */
+    .bus-marker-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .bus-badge-plate {
+      background: #090C10;
+      color: #FFFFFF;
+      border: 1.5px solid #4ADE80;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 9px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .bus-badge-plate .speed-tag {
+      color: #4ADE80;
+      font-size: 8px;
+    }
+    .bus-puck {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #0F2A1D;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 0 12px rgba(74, 222, 128, 0.8);
+      display: grid;
+      place-items: center;
+      position: relative;
+      margin-top: 2px;
+    }
+    .bus-puck .arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 9px solid #4ADE80;
+      transform-origin: center;
+    }
+    .bus-pulse-ring {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(74, 222, 128, 0.6);
+      animation: busPulse 1.8s infinite ease-out;
+      pointer-events: none;
+    }
+    @keyframes busPulse {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    /* Stop Circle Marker */
+    .stop-marker-origin {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #007A3D;
+      border: 2.5px solid #FFFFFF;
+      box-shadow: 0 0 8px rgba(0,0,0,0.8);
+    }
+    .stop-marker-regular {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4ADE80;
+      border: 1.5px solid #0F2A1D;
+      box-shadow: 0 0 4px rgba(0,0,0,0.6);
+    }
+    .leaflet-popup-content-wrapper {
+      background: #14221A !important;
+      color: #FFFFFF !important;
+      border: 1px solid rgba(74, 222, 128, 0.4) !important;
+      border-radius: 12px !important;
+      font-size: 11px !important;
+    }
+    .leaflet-popup-tip {
+      background: #14221A !important;
+    }
+    .leaflet-control-attribution {
+      background: rgba(9, 12, 16, 0.8) !important;
+      color: #64748b !important;
+      font-size: 8px !important;
+    }
+    .leaflet-control-attribution a {
+      color: #94a3b8 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Route Info Header Tag -->
+  <div class="route-badge-overlay" id="route-badge">
+    <span class="dot"></span>
+    <span id="route-tag-text">T815 · Real GTFS Feed</span>
+  </div>
+
+  <!-- Map Controls -->
+  <div class="map-controls">
+    <button class="map-btn" id="btn-fit" title="Fit Route"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg></button>
+    <button class="map-btn" id="btn-follow" title="Follow Bus"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="map-btn" id="btn-zoom-in" title="Zoom In">+</button>
+    <button class="map-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+  </div>
+
+  <script>
+    // Initialize Leaflet Map.
+    //
+    // The initial view comes from the route the app is showing, passed in the
+    // query string. Hard-coding a Klang Valley centre here made the map open
+    // on the wrong part of the city and then jump to the route a second later.
+    const params = new URLSearchParams(window.location.search);
+    const startLat = parseFloat(params.get('lat'));
+    const startLon = parseFloat(params.get('lon'));
+    const startZoom = parseInt(params.get('zoom') || '15', 10);
+    const hasStart = isFinite(startLat) && isFinite(startLon);
+
+    const map = L.map('map', {
+      zoomControl: false,
+      attributionControl: true,
+      fadeAnimation: true,
+      zoomAnimation: true
+    }).setView(
+      hasStart ? [startLat, startLon] : [3.1275, 101.6390],
+      hasStart ? startZoom : 14
+    );
+
+    // 1. REAL Dark Mode Esri World Dark Gray Base (Exact same as TodakBus)
+    const baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 16,
+      maxZoom: 18,
+      keepBuffer: 3,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
+    }).addTo(map);
+
+    // 2. Esri World Dark Gray Reference (Street names, highway labels, boundaries)
+    const refLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 16,
+      maxZoom: 18,
+      keepBuffer: 3,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      zIndex: 500
+    }).addTo(map);
+
+    // Layers
+    let routeCasingLayer = null;
+    let routeCoreLayer = null;
+    const stopsLayer = L.layerGroup().addTo(map);
+    const busesLayer = L.layerGroup().addTo(map);
+
+    let currentRouteShape = [];
+    let currentStops = [];
+    let currentBuses = [];
+    let followBus = false;
+    // Set once the user pans or zooms. After that the map must not yank
+    // itself back to the route on a resize.
+    let userMovedMap = false;
+
+    // Controls
+    map.on('zoomstart', () => { userMovedMap = true; });
+
+    document.getElementById('btn-zoom-in').addEventListener('click', () => map.zoomIn());
+    document.getElementById('btn-zoom-out').addEventListener('click', () => map.zoomOut());
+    
+    document.getElementById('btn-fit').addEventListener('click', () => {
+      fitRouteBounds();
+    });
+
+    const followBtn = document.getElementById('btn-follow');
+    followBtn.addEventListener('click', () => {
+      followBus = !followBus;
+      followBtn.classList.toggle('active', followBus);
+      if (followBus && currentBuses.length > 0) {
+        map.setView([currentBuses[0].lat, currentBuses[0].lon], 16, { animate: true });
+      }
+    });
+
+    map.on('dragstart', () => {
+      userMovedMap = true;
+      if (followBus) {
+        followBus = false;
+        followBtn.classList.remove('active');
+      }
+    });
+
+    function fitRouteBounds() {
+      // The map lives in a bottom sheet whose height changes as the sheet
+      // settles. Leaflet caches the container size, so without invalidateSize
+      // the fit is computed against a stale size and lands in the wrong place.
+      map.invalidateSize();
+
+      // The route polyline is the thing to focus on. Fall back to the stops
+      // when the route has no shape.
+      let bounds = null;
+      if (routeCoreLayer && currentRouteShape.length > 0) {
+        bounds = routeCoreLayer.getBounds();
+        // A bus parked at a depot on the far side of the loop must not
+        // stretch the view and squash the route into a corner. Only pull in
+        // buses that are basically on the route.
+        const nearRoute = bounds.pad(0.35);
+        currentBuses.forEach(b => {
+          if (b.lat == null || b.lon == null) return;
+          if (nearRoute.contains(L.latLng(b.lat, b.lon))) bounds.extend([b.lat, b.lon]);
+        });
+      } else if (currentStops.length > 0) {
+        bounds = L.latLngBounds(currentStops.map(s => [s.lat, s.lon]));
+      } else if (currentBuses.length > 0) {
+        bounds = L.latLngBounds(currentBuses.map(b => [b.lat, b.lon]));
+      }
+      if (!bounds || !bounds.isValid()) return;
+
+      map.fitBounds(bounds, { padding: [25, 25], maxZoom: 16 });
+      document.getElementById('map').classList.add('map-ready');
+    }
+
+    // The sheet resizes as it settles. Refit, unless the user has panned away.
+    window.addEventListener('resize', () => {
+      map.invalidateSize();
+      if (!userMovedMap) fitRouteBounds();
+    });
+
+    // Public API called by Jetpack Compose WebView Bridge or Local Script
+    window.setRouteData = function(data) {
+      // data: { code: 'T815', headsign: '...', shape: [[lat, lon], ...], stops: [...] }
+      if (!data) return;
+
+      document.getElementById('route-tag-text').textContent = `${data.code || 'Feeder'} · ${data.stops?.length || 0} Stops`;
+
+      // 1. Draw Route Polyline
+      if (routeCasingLayer) map.removeLayer(routeCasingLayer);
+      if (routeCoreLayer) map.removeLayer(routeCoreLayer);
+
+      currentRouteShape = data.shape || [];
+      if (currentRouteShape.length > 0) {
+        // High contrast casing
+        routeCasingLayer = L.polyline(currentRouteShape, {
+          color: '#05070A',
+          weight: 7,
+          opacity: 0.9,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(map);
+
+        // Core Feeder Green
+        routeCoreLayer = L.polyline(currentRouteShape, {
+          color: '#4ADE80',
+          weight: 4,
+          opacity: 1.0,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(map);
+
+      }
+
+      // Always fit, even when the route has no shape: otherwise the map
+      // stays wherever it was left and shows a different part of the city.
+      fitRouteBounds();
+
+      // 2. Render Stops
+      stopsLayer.clearLayers();
+      currentStops = data.stops || [];
+      currentStops.forEach((s, idx) => {
+        const isFirst = (idx === 0 || s.seq === 1);
+        const iconHtml = isFirst 
+          ? `<div class="stop-marker-origin"></div>`
+          : `<div class="stop-marker-regular"></div>`;
+
+        const icon = L.divIcon({
+          html: iconHtml,
+          className: '',
+          iconSize: isFirst ? [16, 16] : [10, 10],
+          iconAnchor: isFirst ? [8, 8] : [5, 5]
+        });
+
+        const marker = L.marker([s.lat, s.lon], { icon }).addTo(stopsLayer);
+        marker.bindPopup(`<b>${s.name}</b><br><small>Stop #${s.seq} · Code: ${s.code || 'N/A'}</small>`);
+      });
+    };
+
+    window.updateBuses = function(busesList) {
+      currentBuses = busesList || [];
+      busesLayer.clearLayers();
+
+      currentBuses.forEach(b => {
+        const heading = b.heading || 0;
+        const plate = b.plate || 'BUS';
+        const speed = b.speedKmh || 0;
+
+        const busHtml = `
+          <div class="bus-marker-container">
+            <div class="bus-badge-plate">
+              <span>${plate}</span>
+              <span class="speed-tag">${speed}km/h</span>
+            </div>
+            <div class="bus-puck">
+              <div class="bus-pulse-ring"></div>
+              <div class="arrow" style="transform: rotate(${heading}deg);"></div>
+            </div>
+          </div>
+        `;
+
+        const busIcon = L.divIcon({
+          html: busHtml,
+          className: '',
+          iconSize: [60, 48],
+          iconAnchor: [30, 36]
+        });
+
+        const busMarker = L.marker([b.lat, b.lon], { icon: busIcon, zIndexOffset: 1000 }).addTo(busesLayer);
+        busMarker.bindPopup(`<b>Bus ${plate}</b><br>Speed: ${speed} km/h · Heading: ${heading}°`);
+      });
+
+      if (followBus && currentBuses.length > 0) {
+        map.panTo([currentBuses[0].lat, currentBuses[0].lon], { animate: true });
+      }
+
+      // When buses arrive after the initial route fit, re-fit so any vehicle
+      // outside the route loop is not stranded off-screen.
+      if (currentBuses.length > 0 && currentRouteShape.length > 0 && routeCoreLayer) {
+        fitRouteBounds();
+      }
+    };
+
+    // Auto-initialize with T815 route shape for standalone browser/preview.
+    // No demo bus: in the app this fetch() always fails (file:// blocks it), so a
+    // fallback vehicle here would flash fake telemetry before Kotlin pushes real data.
+    fetch('gtfs_feeder_catalog.json')
+      .then(r => r.json())
+      .then(catalog => {
+        const t815 = catalog.find(r => r.code === 'T815') || catalog[0];
+        if (t815) {
+          window.setRouteData(t815);
+        }
+      })
+      .catch(() => {
+        // Fallback demo coordinates if local file protocol restricts relative fetch
+        const demoShape = [
+          [3.1275, 101.6390],
+          [3.1290, 101.6415],
+          [3.1315, 101.6440],
+          [3.1330, 101.6465],
+          [3.1350, 101.6480],
+          [3.1325, 101.6510],
+          [3.1295, 101.6500],
+          [3.1260, 101.6450],
+          [3.1275, 101.6390]
+        ];
+        window.setRouteData({
+          code: 'T815',
+          headsign: 'Universiti Malaya ↺ Phileo',
+          shape: demoShape,
+          stops: [
+            { id: '1', name: 'MRT Phileo Damansara Pintu A (Bay 1)', seq: 1, code: 'Bay 1', lat: 3.1275, lon: 101.6390 },
+            { id: '2', name: 'Tiara Damansara (Utara)', seq: 2, code: 'PJ240', lat: 3.1315, lon: 101.6440 },
+            { id: '3', name: 'Pusat Asasi Sains UM', seq: 3, code: 'KL110', lat: 3.1350, lon: 101.6480 }
+          ]
+        });
+        // No demo vehicle — wait for real GTFS-RT positions from the host app.
+        window.updateBuses([]);
+      });
+  </script>
+</body>
+</html>
