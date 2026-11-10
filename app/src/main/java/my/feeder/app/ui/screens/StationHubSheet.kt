@@ -187,14 +187,14 @@ fun StationHubSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(PulseGreen100.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                 .padding(4.dp)
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (selectedTab == 0) PulseGreen900 else Color.Transparent)
+                    .background(if (selectedTab == 0) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable { selectedTab = 0 }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -203,14 +203,14 @@ fun StationHubSheetContent(
                     text = "Nearby Stations",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (selectedTab == 0) Color.White else PulseMuted
+                    color = if (selectedTab == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (selectedTab == 1) PulseGreen900 else Color.Transparent)
+                    .background(if (selectedTab == 1) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable { selectedTab = 1 }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -219,7 +219,7 @@ fun StationHubSheetContent(
                     text = "Pinned Hubs",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (selectedTab == 1) Color.White else PulseMuted
+                    color = if (selectedTab == 1) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -237,10 +237,10 @@ fun StationHubSheetContent(
                 val isSelected = station.code == selectedStationCode
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = if (isSelected) PulseGreen100 else MaterialTheme.colorScheme.surface,
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                     border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isSelected) PulseGreen700 else MaterialTheme.colorScheme.outline
+                        if (isSelected) 1.5.dp else 1.dp,
+                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,13 +276,13 @@ fun StationHubSheetContent(
                                 text = station.name,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = if (station.distanceMeters < 1000) "${station.distanceMeters}m away" else "${station.distanceMeters / 1000}km away",
                                     fontSize = 13.sp,
-                                    color = PulseGreen700,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
@@ -317,7 +317,7 @@ fun StationHubSheetContent(
                         if (isSelected) {
                             Surface(
                                 shape = CircleShape,
-                                color = PulseGreen900,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -325,7 +325,7 @@ fun StationHubSheetContent(
                                         drawableId = R.drawable.ic_lucide_check,
                                         contentDescription = "Selected",
                                         size = 14.dp,
-                                        tint = Color.White
+                                        tint = MaterialTheme.colorScheme.onPrimary
                                     )
                                 }
                             }

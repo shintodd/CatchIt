@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,8 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import my.feeder.app.ui.theme.Motion
 import kotlinx.coroutines.delay
@@ -24,8 +22,7 @@ import kotlinx.coroutines.delay
  * Tactile press compression: the surface scales to 0.97 while held, then
  * releases. Gives a tap physical feedback without moving the layout.
  *
- * Usage: pass the same interactionSource to the clickable modifier so the
- * press state and the ripple stay in sync.
+ * Drawn entirely in draw-phase via graphicsLayer to eliminate recompositions.
  */
 @Composable
 fun Modifier.pressScale(
@@ -38,7 +35,10 @@ fun Modifier.pressScale(
         animationSpec = tween(durationMillis = Motion.MICRO, easing = Motion.Exit),
         label = "pressScale"
     )
-    return this.scale(scale)
+    return this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
 }
 
 /**
@@ -46,7 +46,7 @@ fun Modifier.pressScale(
  * offset by [index] * 30ms so the list ripples in rather than snapping.
  *
  * The cascade is capped at [Motion.STAGGER_MAX_ROWS] so a long list never
- * leaves the last row waiting.
+ * leaves the last row waiting. Rendered in graphicsLayer for 120fps smoothness.
  */
 @Composable
 fun StaggeredRow(
@@ -73,7 +73,12 @@ fun StaggeredRow(
         label = "staggerRise"
     )
 
-    Box(modifier = modifier.alpha(alpha).offset(y = rise)) {
+    Box(
+        modifier = modifier.graphicsLayer {
+            this.alpha = alpha
+            translationY = rise.toPx()
+        }
+    ) {
         content()
     }
 }

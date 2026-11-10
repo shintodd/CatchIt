@@ -451,7 +451,7 @@ private fun RouteStopsSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg)
-                .height(52.dp),
+                .defaultMinSize(minHeight = 48.dp),
             shape = RoundedCornerShape(Radius.md),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {

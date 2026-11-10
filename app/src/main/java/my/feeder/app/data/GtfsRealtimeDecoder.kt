@@ -5,7 +5,7 @@ package my.feeder.app.data
  *
  * data.gov.my serves GTFS-RT as protobuf. Rather than pulling in the protobuf
  * runtime plus generated bindings (and the R8 keep rules they need), this reads
- * only the wire fields FeederMY actually uses. GTFS-RT is append-only and
+ * only the wire fields CatchIt actually uses. GTFS-RT is append-only and
  * field-number stable, so unknown fields are skipped safely.
  *
  * Field numbers follow the official gtfs-realtime.proto:

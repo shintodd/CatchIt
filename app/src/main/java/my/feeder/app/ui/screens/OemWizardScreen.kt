@@ -194,7 +194,7 @@ fun OemWizardScreen(
                     shape = RoundedCornerShape(Radius.md),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text(
                         text = "Complete & Return to Commute",
@@ -282,7 +282,7 @@ fun OemStepCard(
                 shape = RoundedCornerShape(Radius.sm),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
+                    .defaultMinSize(minHeight = 48.dp)
             ) {
                 Text(
                     text = buttonText,

@@ -90,11 +90,9 @@ object DepartureAlarmNotifier {
             .setContentIntent(openApp(context, a))
             .build()
 
+        val notificationId = (a.stage * 10_000) + (("${a.routeCode}_${a.stopId}").hashCode() and 0x1FFF)
         return try {
-            manager.notify(
-                if (a.stage == 1) NOTIFICATION_ID_STAGE1 else NOTIFICATION_ID_STAGE2,
-                notification
-            )
+            manager.notify(notificationId, notification)
             true
         } catch (e: Exception) {
             false

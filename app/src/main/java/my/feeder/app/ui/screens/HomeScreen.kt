@@ -16,6 +16,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -25,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -36,7 +38,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import kotlinx.coroutines.delay
+import my.feeder.app.data.AppUpdateManager
+import my.feeder.app.data.DestinationResult
+import my.feeder.app.data.DestinationSearchEngine
+import my.feeder.app.data.UpdateStatus
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.GtfsRoute
+import my.feeder.app.data.ServiceAlertsRepository
 import my.feeder.app.ui.theme.*
 import java.util.Calendar
 import java.util.TimeZone
@@ -72,10 +82,15 @@ internal data class StopMatch(
  */
 internal fun matchStops(routes: List<GtfsRoute>, query: String): List<StopMatch> {
     if (query.isBlank()) return emptyList()
+    val qClean = query.trim()
+    val qSlug = qClean.lowercase().replace(Regex("[^a-z0-9]"), "")
     val byName = LinkedHashMap<String, StopMatch>()
     for (route in routes) {
         for (stop in route.stops) {
-            if (!stop.name.contains(query, ignoreCase = true)) continue
+            val stopSlug = stop.name.lowercase().replace(Regex("[^a-z0-9]"), "")
+            val isMatch = stop.name.contains(qClean, ignoreCase = true) ||
+                (qSlug.length >= 3 && stopSlug.contains(qSlug))
+            if (!isMatch) continue
             val existing = byName[stop.name]
             byName[stop.name] = if (existing == null) {
                 StopMatch(stop.name, stop.code, listOf(route.code), listOf(route.headsign))
@@ -103,6 +118,7 @@ fun HomeScreen(
     activeStationCode: String = "KG12",
     onStationPickerClick: () -> Unit,
     onRouteClick: (String) -> Unit,
+    onOpenNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val routes by GtfsRepository.routes.collectAsState()
@@ -171,7 +187,8 @@ fun HomeScreen(
                 stationName = activeStationName,
                 hasLiveData = hasLiveData,
                 liveTotal = liveTotal,
-                onStationClick = onStationPickerClick
+                onStationClick = onStationPickerClick,
+                onOpenNotifications = onOpenNotifications
             )
         }
 
@@ -258,12 +275,20 @@ fun HomeScreen(
 
 @Composable
 private fun HeroHeader(
-    stationCode: String,
-    stationName: String,
     hasLiveData: Boolean,
     liveTotal: Int,
-    onStationClick: () -> Unit
+    stationCode: String = "",
+    stationName: String = "",
+    onStationClick: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {}
 ) {
+    var showNoticeDialog by rememberSaveable { mutableStateOf(false) }
+    val serviceAlerts by ServiceAlertsRepository.alerts.collectAsState()
+    val hasAlerts = serviceAlerts.isNotEmpty()
+    val context = LocalContext.current
+    val appUpdate by AppUpdateManager.updateAvailable.collectAsState()
+    val updateStatus by AppUpdateManager.updateStatus.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,61 +306,269 @@ private fun HeroHeader(
             Image(
                 painter = painterResource(R.drawable.logo_catchit_header),
                 contentDescription = "CatchIt",
-                modifier = Modifier.height(34.dp)
+                modifier = Modifier
+                    .height(40.dp)
+                    .aspectRatio(2.94f),
+                contentScale = ContentScale.Fit
             )
 
-            // Specific live status, not a decorative dot.
-            Text(
-                text = when {
-                    !hasLiveData -> "Connecting…"
-                    liveTotal == 0 -> "No buses live"
-                    liveTotal == 1 -> "1 bus live"
-                    else -> "$liveTotal buses live"
-                },
-                fontSize = TypeSize.caption,
-                fontWeight = FontWeight.Bold,
-                color = if (liveTotal > 0) Color(0xFF86EFAC) else PulseGreen100.copy(alpha = 0.85f),
-                style = TabularNums
-            )
+            Surface(
+                shape = RoundedCornerShape(Radius.pill),
+                color = Color.Black.copy(alpha = 0.22f),
+                border = BorderStroke(
+                    1.dp,
+                    if (liveTotal > 0) Color(0xFF86EFAC).copy(alpha = 0.35f) else Color.White.copy(alpha = 0.15f)
+                )
+            ) {
+                Text(
+                    text = when {
+                        !hasLiveData -> "Connecting…"
+                        liveTotal == 0 -> "No buses live"
+                        liveTotal == 1 -> "1 bus live"
+                        else -> "$liveTotal buses live"
+                    },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (liveTotal > 0) Color(0xFF86EFAC) else PulseGreen100.copy(alpha = 0.85f),
+                    style = TabularNums,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(Spacing.md))
 
+        // In-app seamless update banner when a new APK is released
+        if (appUpdate != null) {
+            val update = appUpdate!!
+            Surface(
+                color = Color(0xFF1E3A8A).copy(alpha = 0.92f),
+                shape = RoundedCornerShape(Radius.md),
+                border = BorderStroke(1.dp, Color(0xFF60A5FA).copy(alpha = 0.5f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        AppUpdateManager.downloadAndInstall(context, update)
+                    }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF60A5FA).copy(alpha = 0.25f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            LucideIcon(
+                                drawableId = R.drawable.ic_lucide_rotate_cw,
+                                contentDescription = "Update",
+                                size = 16.dp,
+                                tint = Color(0xFF93C5FD)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(Spacing.md))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "UPDATE READY · v${update.versionName}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF93C5FD),
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = when (val s = updateStatus) {
+                                is UpdateStatus.Downloading -> "Downloading update: ${s.progressPercent}%"
+                                is UpdateStatus.ReadyToInstall -> "Ready to install · Tap to apply"
+                                else -> "Tap to download & install update seamlessly"
+                            },
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.95f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(Spacing.sm))
+        }
+
+        // Heads-up notification & disclaimer banner
         Surface(
-            color = Color.White.copy(alpha = 0.14f),
+            color = Color.White.copy(alpha = 0.12f),
             shape = RoundedCornerShape(Radius.md),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onStationClick() }
+                .clickable { showNoticeDialog = true }
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.md),
+                modifier = Modifier.padding(horizontal = Spacing.md, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LucideIcon(
-                    drawableId = R.drawable.ic_lucide_locate,
-                    contentDescription = null,
-                    size = 18.dp,
-                    tint = Color(0xFF86EFAC)
-                )
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text(
-                    text = "$stationCode · $stationName",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFFDE047).copy(alpha = 0.22f),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        LucideIcon(
+                            drawableId = R.drawable.ic_lucide_bell,
+                            contentDescription = "Notification",
+                            size = 16.dp,
+                            tint = Color(0xFFFDE047)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(Spacing.md))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "HEADS UP",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFDE047),
+                            letterSpacing = 0.6.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (hasAlerts) "· ${serviceAlerts.size} Live Service Alert${if (serviceAlerts.size > 1) "s" else ""}" else "· Real-time Notice",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (hasAlerts) serviceAlerts.first().title else "Live bus GPS via data.gov.my. Arrivals are estimates affected by real traffic.",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.95f),
+                        lineHeight = 16.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.width(Spacing.xs))
                 LucideIcon(
                     drawableId = R.drawable.ic_lucide_chevron_down,
-                    contentDescription = "Change station",
+                    contentDescription = "View disclaimer",
                     size = 16.dp,
-                    tint = Color.White.copy(alpha = 0.9f)
+                    tint = Color.White.copy(alpha = 0.75f)
                 )
             }
         }
+    }
+
+    if (showNoticeDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoticeDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LucideIcon(
+                        drawableId = if (hasAlerts) R.drawable.ic_lucide_alert_triangle else R.drawable.ic_lucide_bell,
+                        contentDescription = null,
+                        size = 20.dp,
+                        tint = if (hasAlerts) Color(0xFFEF4444) else MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(
+                        text = if (hasAlerts) "Live Disruptions & Notices" else "App Notice & Disclaimers",
+                        fontSize = TypeSize.title,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    if (hasAlerts) {
+                        Text(
+                            text = "⚠️ Live Disruptions from Prasarana:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFFEF4444)
+                        )
+                        serviceAlerts.take(3).forEach { sa ->
+                            Surface(
+                                shape = RoundedCornerShape(Radius.sm),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = sa.title,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (sa.published.isNotBlank()) {
+                                        Text(
+                                            text = sa.published,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (sa.excerpt.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = sa.excerpt,
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Button(
+                            onClick = {
+                                showNoticeDialog = false
+                                onOpenNotifications()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(Radius.sm),
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        ) {
+                            Text("View all service updates (${serviceAlerts.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    }
+
+                    Text(
+                        text = "📢 Latest Updates:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "• Nationwide Places Search: Search any destination, mall, clinic, or landmark across Malaysia to find nearest bus routes.\n• Real-Time Transit: Bus locations refresh live every 15 seconds.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text(
+                        text = "⚠️ Disclaimer:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "CatchIt is an independent community transit navigation tool. Real-time GTFS feeds are sourced directly from open public data provided by the Ministry of Transport Malaysia (data.gov.my) and Prasarana Malaysia. Arrival estimates are calculated algorithmically and may vary depending on local road traffic, weather, and operator schedules.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showNoticeDialog = false }) {
+                    Text("Got it", fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(Radius.lg)
+        )
     }
 }
 
@@ -375,6 +608,42 @@ private fun RouteSearchBar(
     // is a stop name rather than a route destination.
     val stopMatches = remember(routes, query) { matchStops(routes, query) }
 
+    val nationwideStops by GtfsRepository.nationwideStops.collectAsState()
+    val nationwideRoutes by GtfsRepository.nationwideRoutes.collectAsState()
+
+    val nationwideRouteMatches = remember(nationwideRoutes, query) {
+        val trimmed = query.trim()
+        if (trimmed.length < 2) emptyList()
+        else nationwideRoutes.filter {
+            it.code.contains(trimmed, ignoreCase = true) ||
+                it.name.contains(trimmed, ignoreCase = true)
+        }.take(8)
+    }
+
+    var destinationResults by remember { mutableStateOf<List<DestinationResult>>(emptyList()) }
+    var isSearchingDestination by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(query, routes, nationwideStops) {
+        val trimmed = query.trim()
+        if (trimmed.length >= 3) {
+            isSearchingDestination = true
+            delay(200)
+            val res = DestinationSearchEngine.searchDestinations(
+                query = trimmed,
+                routes = routes,
+                nationwideStops = nationwideStops,
+                context = context,
+                limit = 3
+            )
+            destinationResults = res
+            isSearchingDestination = false
+        } else {
+            destinationResults = emptyList()
+            isSearchingDestination = false
+        }
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
@@ -395,12 +664,12 @@ private fun RouteSearchBar(
                 if (query.isNotBlank()) {
                     IconButton(
                         onClick = { onQueryChange("") },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         LucideIcon(
                             drawableId = R.drawable.ic_lucide_x,
                             contentDescription = "Clear search",
-                            size = 16.dp,
+                            size = 18.dp,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -442,9 +711,9 @@ private fun RouteSearchBar(
                         .verticalScroll(rememberScrollState())
                         .padding(vertical = Spacing.xs)
                 ) {
-                    if (matches.isEmpty() && stopMatches.isEmpty()) {
+                    if (matches.isEmpty() && stopMatches.isEmpty() && destinationResults.isEmpty()) {
                         Text(
-                            text = "No route or stop matches \"$query\"",
+                            text = if (isSearchingDestination) "Searching destinations across Malaysia..." else "No route or stop matches \"$query\"",
                             fontSize = TypeSize.body,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(
@@ -453,6 +722,19 @@ private fun RouteSearchBar(
                             )
                         )
                     } else {
+                        if (destinationResults.isNotEmpty()) {
+                            SectionLabel("Destinations & Nearby Buses")
+                            destinationResults.forEach { dest ->
+                                DestinationResultRow(
+                                    destination = dest,
+                                    onClickRoute = { code ->
+                                        expanded = false
+                                        onRouteSelected(code)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.xs))
+                            }
+                        }
                         if (matches.isNotEmpty()) {
                             SectionLabel("Routes")
                             matches.forEach { r ->
@@ -462,6 +744,18 @@ private fun RouteSearchBar(
                                     onClick = {
                                         expanded = false
                                         onRouteSelected(r.code)
+                                    }
+                                )
+                            }
+                        }
+                        if (nationwideRouteMatches.isNotEmpty()) {
+                            SectionLabel("Nationwide Routes")
+                            nationwideRouteMatches.forEach { nr ->
+                                NationwideRouteRow(
+                                    route = nr,
+                                    onClick = {
+                                        expanded = false
+                                        onRouteSelected(nr.code)
                                     }
                                 )
                             }
@@ -482,6 +776,177 @@ private fun RouteSearchBar(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** One resolved destination card displaying nearby bus stops and routes. */
+@Composable
+private fun DestinationResultRow(
+    destination: DestinationResult,
+    onClickRoute: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.xs)
+            .testTag("destination-result-${destination.name}"),
+        shape = RoundedCornerShape(Radius.md),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LucideIcon(
+                    drawableId = R.drawable.ic_lucide_map_pin,
+                    contentDescription = null,
+                    size = 18.dp,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = destination.name,
+                        fontSize = TypeSize.body,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = destination.address,
+                        fontSize = TypeSize.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (destination.nearestStops.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Text(
+                    text = "Nearest bus stops & routes:",
+                    fontSize = TypeSize.caption,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                destination.nearestStops.take(3).forEach { stop ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (stop.agency.isNotBlank() && stop.agency != "RapidKL") "${stop.stopName} (${stop.agency})" else stop.stopName,
+                            fontSize = TypeSize.caption,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.xs))
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = "${stop.distanceMeters}m walk",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        stop.routeCodes.forEach { routeCode ->
+                            Surface(
+                                shape = RoundedCornerShape(Radius.sm),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .testTag("destination-route-$routeCode")
+                                    .defaultMinSize(minWidth = 48.dp, minHeight = 44.dp)
+                                    .clickable { onClickRoute(routeCode) }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = routeCode,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = "No feeder bus routes within walking distance (800m)",
+                    fontSize = TypeSize.caption,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+    }
+}
+
+/** One nationwide bus route row from any state across Malaysia. */
+@Composable
+private fun NationwideRouteRow(
+    route: my.feeder.app.data.NationwideRoute,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("search-result-${route.code}")
+            .clickable { onClick() }
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = route.code,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = TypeSize.headline,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Surface(
+                    shape = RoundedCornerShape(Radius.sm),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Text(
+                        text = route.agency,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            if (route.name.isNotBlank()) {
+                Text(
+                    text = route.name,
+                    fontSize = TypeSize.caption,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

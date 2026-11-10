@@ -1,4 +1,4 @@
-# FeederMY — What This App Is, What It Does, and What It's For
+# CatchIt (formerly FeederMY) — What This App Is, What It Does, and What It's For
 
 *A working document for naming. Everything here is factual — pulled from the
 codebase, the approved product spec, and the live data sources — not marketing

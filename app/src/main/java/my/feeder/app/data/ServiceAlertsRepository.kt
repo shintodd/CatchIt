@@ -2,8 +2,9 @@ package my.feeder.app.data
 
 import android.content.Context
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -130,11 +131,13 @@ object ServiceAlertsRepository {
         "https://r.jina.ai/https://myrapid.com.my/pulse/service-alerts-on-pulse/" +
             "?nc=${System.currentTimeMillis() / 1000}"
 
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     fun refresh() {
         // Network + parse on a background thread; StateFlow publishes on main.
-        GlobalScope.launch(Dispatchers.IO) {
+        repositoryScope.launch {
             val fresh = refreshBlocking()
-            if (fresh.isNotEmpty()) _newAlerts.tryEmit(fresh)
+            if (fresh.isNotEmpty()) _newAlerts.emit(fresh)
         }
     }
 
@@ -372,9 +375,10 @@ object ServiceAlertsRepository {
             .replace(Regex("""\[Read More[^\]]*\]\([^)]*\)"""), "")
             .replace(Regex("""!\[[^\]]*\]\([^)]*\)"""), "")
             .replace(Regex("""\[[^\]]*\]\([^)]*\)"""), "")
+            .replace(Regex("""([A-Z][a-z]+ \d{1,2}, \d{4})\s+(\d{1,2}:\d{2}\s*[ap]m)"""), "")
             .replace(Regex("""\s+"""), " ")
             .trim()
-        return if (text.length > 200) text.take(200).trimEnd() + "…" else text
+        return if (text.length > 800) text.take(800).trimEnd() + "…" else text
     }
 
     /** The same timestamp as epoch millis in MYT, for sorting and age display. */

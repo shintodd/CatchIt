@@ -54,11 +54,13 @@ class DepartureAlarmWorker(
             }
             Result.success()
         } catch (e: Exception) {
-            // A failed check is not a failure of the work: try again shortly.
+            // A failed check is not a failure of the work: reschedule and succeed so WorkManager doesn't duplicate.
             if (DepartureAlarmStore.load().isNotEmpty()) {
                 scheduleNext(applicationContext)
+                Result.success()
+            } else {
+                Result.failure()
             }
-            Result.retry()
         }
     }
 

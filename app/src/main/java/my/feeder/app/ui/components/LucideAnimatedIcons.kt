@@ -7,13 +7,11 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import my.feeder.app.R
 import my.feeder.app.ui.navigation.FeederNavTab
 import my.feeder.app.ui.theme.Motion
@@ -80,10 +78,12 @@ fun LucideNavIcon(
     }
 
     Box(
-        modifier = modifier
-            .offset(y = liftOffsetY)
-            .scale(scale)
-            .rotate(rotation),
+        modifier = modifier.graphicsLayer {
+            translationY = liftOffsetY.toPx()
+            scaleX = scale
+            scaleY = scale
+            rotationZ = rotation
+        },
         contentAlignment = Alignment.Center
     ) {
         LucideIcon(
@@ -99,7 +99,8 @@ fun LucideNavIcon(
  * Bell with a short ring on arm/disarm.
  *
  * The swing is a one-shot confirmation, so it can be expressive — but it settles
- * damped (no overshoot) and finishes in ~350ms total.
+ * damped (no overshoot) and finishes in ~350ms total. Rendered in graphicsLayer
+ * for draw-phase efficiency without re-layout.
  */
 @Composable
 fun LucideAnimatedBell(
@@ -110,21 +111,26 @@ fun LucideAnimatedBell(
     triggerAnim: Int = 0
 ) {
     val rotation = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
+    var isFirstLaunch by remember { mutableStateOf(true) }
 
     LaunchedEffect(isArmed, triggerAnim) {
+        if (isFirstLaunch) {
+            isFirstLaunch = false
+            if (triggerAnim == 0) return@LaunchedEffect
+        }
         if (isArmed || triggerAnim > 0) {
-            scope.launch {
-                rotation.animateTo(-14f, tween(70, easing = Motion.Enter))
-                rotation.animateTo(11f, tween(80, easing = Motion.Move))
-                rotation.animateTo(-6f, tween(70, easing = Motion.Move))
-                rotation.animateTo(0f, tween(Motion.EXIT, easing = Motion.Enter))
-            }
+            rotation.animateTo(-14f, tween(70, easing = Motion.Enter))
+            rotation.animateTo(11f, tween(80, easing = Motion.Move))
+            rotation.animateTo(-6f, tween(70, easing = Motion.Move))
+            rotation.animateTo(3f, tween(60, easing = Motion.Move))
+            rotation.animateTo(0f, tween(60, easing = Motion.Exit))
         }
     }
 
     Box(
-        modifier = modifier.rotate(rotation.value),
+        modifier = modifier.graphicsLayer {
+            rotationZ = rotation.value
+        },
         contentAlignment = Alignment.Center
     ) {
         LucideIcon(
@@ -158,7 +164,9 @@ fun LucideAnimatedRefresh(
     )
 
     Box(
-        modifier = modifier.rotate(if (isSpinning) spinAngle else 0f),
+        modifier = modifier.graphicsLayer {
+            rotationZ = if (isSpinning) spinAngle else 0f
+        },
         contentAlignment = Alignment.Center
     ) {
         LucideIcon(
@@ -187,7 +195,9 @@ fun LucideAnimatedChevron(
     )
 
     Box(
-        modifier = modifier.rotate(rotation),
+        modifier = modifier.graphicsLayer {
+            rotationZ = rotation
+        },
         contentAlignment = Alignment.Center
     ) {
         LucideIcon(
@@ -222,7 +232,11 @@ fun LucideAnimatedRadio(
     )
 
     Box(
-        modifier = modifier.scale(if (isBroadcasting) pulseScale else 1.0f),
+        modifier = modifier.graphicsLayer {
+            val s = if (isBroadcasting) pulseScale else 1.0f
+            scaleX = s
+            scaleY = s
+        },
         contentAlignment = Alignment.Center
     ) {
         LucideIcon(

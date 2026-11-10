@@ -43,6 +43,7 @@ object DepartureAlarmStore {
     // === Armed alarms ===
 
     /** Every armed alarm, with its fired stages. */
+    @Synchronized
     fun load(): List<Armed> {
         val raw = prefs?.getString(KEY_ALARMS, null) ?: return emptyList()
         return try {
@@ -72,6 +73,7 @@ object DepartureAlarmStore {
         }
     }
 
+    @Synchronized
     private fun save(alarms: List<Armed>) {
         val arr = JSONArray()
         alarms.forEach { armed ->
@@ -93,6 +95,7 @@ object DepartureAlarmStore {
     }
 
     /** Arms an alarm, replacing any earlier alarm for the same route and stop. */
+    @Synchronized
     fun arm(alert: DepartureAlert) {
         val all = load().toMutableList()
         all.removeAll { it.alert.routeCode.equals(alert.routeCode, true) && it.alert.stopId == alert.stopId }
@@ -107,6 +110,7 @@ object DepartureAlarmStore {
         save(all)
     }
 
+    @Synchronized
     fun disarm(routeCode: String, stopId: String) {
         val all = load().toMutableList()
         all.removeAll { it.alert.routeCode.equals(routeCode, true) && it.alert.stopId == stopId }
@@ -114,6 +118,7 @@ object DepartureAlarmStore {
     }
 
     /** Records that a stage has been announced. */
+    @Synchronized
     fun markFired(routeCode: String, stopId: String, stage: Int) {
         val all = load().toMutableList()
         val index = all.indexOfFirst {
@@ -130,6 +135,7 @@ object DepartureAlarmStore {
     }
 
     /** Drops alarms that have already announced both stages. */
+    @Synchronized
     fun pruneCompleted(): Int {
         val all = load()
         val kept = all.filter { !it.isComplete }

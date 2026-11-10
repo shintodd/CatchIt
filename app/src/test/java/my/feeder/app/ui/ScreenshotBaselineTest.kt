@@ -14,7 +14,7 @@ import my.feeder.app.ui.screens.HomeScreen
 import my.feeder.app.ui.screens.NotificationsScreen
 import my.feeder.app.ui.screens.SettingsScreen
 import my.feeder.app.ui.screens.StationHubSheetContent
-import my.feeder.app.ui.theme.FeederMYTheme
+import my.feeder.app.ui.theme.CatchItTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +62,7 @@ class ScreenshotBaselineTest {
                 DeviceConfigurationOverride.FontScale(fontScale) then
                     DeviceConfigurationOverride.DarkMode(dark)
             ) {
-                FeederMYTheme(darkTheme = dark) { content() }
+                CatchItTheme(darkTheme = dark) { content() }
             }
         }
         rule.onRoot().captureRoboImage("src/test/roborazzi/$name.png")

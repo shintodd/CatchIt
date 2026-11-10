@@ -8,7 +8,7 @@ import java.net.URL
  * Fetches live MRT feeder bus positions from Malaysia's national Open API.
  *
  * Endpoint: https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana
- * Category: rapid-bus-mrtfeeder (the 91 RapidKL MRT feeder routes FeederMY covers)
+ * Category: rapid-bus-mrtfeeder (the 91 RapidKL MRT feeder routes CatchIt covers)
  * Auth: none. Licence: CC BY 4.0 (data.gov.my). Upstream refreshes every 30s.
  */
 object GtfsRealtimeClient {
@@ -31,7 +31,7 @@ object GtfsRealtimeClient {
                 readTimeout = READ_TIMEOUT_MS
                 instanceFollowRedirects = true
                 setRequestProperty("Accept", "application/x-protobuf, application/octet-stream, */*")
-                setRequestProperty("User-Agent", "FeederMY/1.0.4 (Android; data.gov.my GTFS-RT)")
+                setRequestProperty("User-Agent", "CatchIt/1.0.4 (Android; data.gov.my GTFS-RT)")
             }
 
             val code = conn.responseCode

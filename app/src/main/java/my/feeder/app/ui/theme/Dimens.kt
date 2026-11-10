@@ -6,7 +6,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Design tokens for FeederMY. One source of truth for spacing, corner radii,
+ * Design tokens for CatchIt. One source of truth for spacing, corner radii,
  * type scale and the accent colour — so screens stop inventing their own
  * ad-hoc 10/12/14/16 values and instead compose from this scale.
  *

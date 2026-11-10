@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -198,6 +199,14 @@ object GtfsRepository {
     private val _schedules = MutableStateFlow<Map<String, List<String>>>(emptyMap())
     val schedules: StateFlow<Map<String, List<String>>> = _schedules.asStateFlow()
 
+    /** Nationwide candidate stops across all Malaysian states. */
+    private val _nationwideStops = MutableStateFlow<List<StopCandidate>>(emptyList())
+    val nationwideStops: StateFlow<List<StopCandidate>> = _nationwideStops.asStateFlow()
+
+    /** Nationwide routes across all Malaysian transit agencies. */
+    private val _nationwideRoutes = MutableStateFlow<List<NationwideRoute>>(emptyList())
+    val nationwideRoutes: StateFlow<List<NationwideRoute>> = _nationwideRoutes.asStateFlow()
+
     private var pinPrefs: android.content.SharedPreferences? = null
 
     /** Binds pin persistence. Safe to call repeatedly; only the first call binds. */
@@ -301,6 +310,58 @@ object GtfsRepository {
             }
 
             _routes.value = parsedRoutes
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun loadNationwideCatalog(context: Context) = withContext(Dispatchers.IO) {
+        if (_nationwideStops.value.isNotEmpty()) return@withContext
+        try {
+            val jsonString = context.assets.open("nationwide_transit_catalog.json").bufferedReader().use { it.readText() }
+            val root = JSONObject(jsonString)
+
+            val routesArr = root.optJSONArray("routes")
+            val parsedRoutes = ArrayList<NationwideRoute>(routesArr?.length() ?: 0)
+            if (routesArr != null) {
+                for (i in 0 until routesArr.length()) {
+                    val rObj = routesArr.getJSONObject(i)
+                    parsedRoutes.add(
+                        NationwideRoute(
+                            code = rObj.getString("code"),
+                            name = rObj.optString("name", ""),
+                            agency = rObj.optString("agency", "")
+                        )
+                    )
+                }
+            }
+
+            val stopsArr = root.optJSONArray("stops")
+            val parsedStops = ArrayList<StopCandidate>(stopsArr?.length() ?: 0)
+            if (stopsArr != null) {
+                for (i in 0 until stopsArr.length()) {
+                    val sObj = stopsArr.getJSONObject(i)
+                    val rArr = sObj.optJSONArray("routes")
+                    val rList = ArrayList<String>(rArr?.length() ?: 0)
+                    if (rArr != null) {
+                        for (j in 0 until rArr.length()) {
+                            rList.add(rArr.getString(j))
+                        }
+                    }
+                    parsedStops.add(
+                        StopCandidate(
+                            name = sObj.getString("name"),
+                            lat = sObj.getDouble("lat"),
+                            lon = sObj.getDouble("lon"),
+                            routeCodes = rList,
+                            agency = sObj.optString("agency", "RapidKL")
+                        )
+                    )
+                }
+            }
+
+            _nationwideRoutes.value = parsedRoutes
+            _nationwideStops.value = parsedStops
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -479,6 +540,14 @@ object GtfsRepository {
         current.remove("${routeCode}_$stopId")
         _activeAlerts.value = current
         DepartureAlarmStore.disarm(routeCode, stopId)
+    }
+
+    /** Resyncs active alert flow with the persisted alarms store. */
+    fun syncAlarmsFromStore() {
+        val restored = DepartureAlarmStore.load()
+        _activeAlerts.value = restored.associate { alarm ->
+            "${alarm.alert.routeCode}_${alarm.alert.stopId}" to alarm.alert
+        }
     }
 
     fun isAlertArmed(routeCode: String, stopId: String): Boolean {
@@ -686,8 +755,16 @@ object GtfsRepository {
             if (bus.isAtTerminal) continue
 
             // A bus that has already gone past the anchor is going the wrong
-            // way for this journey.
-            if (bus.nextStopSeq > 0 && anchor.seq > 0 && bus.nextStopSeq > anchor.seq) continue
+            // way for this journey. For circular feeder loops, calculate distance along loop.
+            if (bus.nextStopSeq > 0 && anchor.seq > 0) {
+                val totalStops = route.stops.size
+                if (totalStops > 0) {
+                    val stopsAhead = (anchor.seq - bus.nextStopSeq + totalStops) % totalStops
+                    if (stopsAhead > (totalStops * 0.85).toInt()) continue
+                } else if (bus.nextStopSeq > anchor.seq) {
+                    continue
+                }
+            }
 
             val metres = haversineMeters(bus.lat, bus.lon, anchor.lat, anchor.lon)
             // A stopped bus has no meaningful heading - it is sitting at a

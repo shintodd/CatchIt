@@ -16,6 +16,8 @@ captures/
 local.properties
 .idea/
 e2e/node_modules/
+scratch/
+.gtfs_cache/
 
 # OS
 .DS_Store

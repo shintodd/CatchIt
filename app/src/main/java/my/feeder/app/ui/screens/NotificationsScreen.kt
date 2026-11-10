@@ -3,10 +3,14 @@ package my.feeder.app.ui.screens
 import my.feeder.app.R
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import my.feeder.app.data.ServiceAlertsRepository
 import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +60,7 @@ private tailrec fun Context.findActivity(): my.feeder.app.MainActivity? = when (
 @Composable
 fun NotificationsScreen(
     onBack: () -> Unit,
+    onRouteClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -130,7 +136,7 @@ fun NotificationsScreen(
                         color = if (isSelected) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier
-                            .defaultMinSize(minHeight = 36.dp)
+                            .defaultMinSize(minHeight = 48.dp)
                             .clickable { filter = f }
                     ) {
                         Row(
@@ -330,7 +336,7 @@ fun NotificationsScreen(
                         NotificationRow(
                             alert = sa,
                             isUnread = sa.url !in readUrls,
-                            onClick = { ServiceAlertsRepository.markRead(sa.url) },
+                            onRouteClick = onRouteClick,
                             onMarkRead = { ServiceAlertsRepository.markRead(sa.url) }
                         )
                     }
@@ -363,9 +369,12 @@ private enum class Filter(val label: String) {
 private fun NotificationRow(
     alert: ServiceAlertsRepository.ServiceAlert,
     isUnread: Boolean,
-    onClick: () -> Unit,
+    onRouteClick: (String) -> Unit = {},
     onMarkRead: () -> Unit
 ) {
+    var isExpanded by rememberSaveable(alert.url) { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     val accent = when (alert.kind) {
         ServiceAlertsRepository.Kind.DIVERSION -> Color(0xFFF59E0B)
         ServiceAlertsRepository.Kind.DISRUPTION -> Color(0xFFEF4444)
@@ -374,116 +383,248 @@ private fun NotificationRow(
         ServiceAlertsRepository.Kind.OTHER -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    val kindLabel = when (alert.kind) {
+        ServiceAlertsRepository.Kind.DIVERSION -> "Route Diversion"
+        ServiceAlertsRepository.Kind.DISRUPTION -> "Service Disruption"
+        ServiceAlertsRepository.Kind.DELAY -> "Service Delay"
+        ServiceAlertsRepository.Kind.RAIL -> "Rail Service Update"
+        ServiceAlertsRepository.Kind.OTHER -> "Service Notice"
+    }
+
+    val rotationDegrees by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "chevron_rotate"
+    )
+
     Surface(
         shape = RoundedCornerShape(Radius.md),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.Top
-        ) {
-            Surface(
-                color = accent.copy(alpha = 0.14f),
-                shape = CircleShape,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    LucideIcon(
-                        drawableId = R.drawable.ic_lucide_alert_triangle,
-                        contentDescription = null,
-                        size = 19.dp,
-                        tint = accent
-                    )
-                }
+            .animateContentSize()
+            .clickable {
+                isExpanded = !isExpanded
+                if (isUnread) onMarkRead()
             }
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Surface(
+                    color = accent.copy(alpha = 0.14f),
+                    shape = CircleShape,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        LucideIcon(
+                            drawableId = R.drawable.ic_lucide_alert_triangle,
+                            contentDescription = null,
+                            size = 19.dp,
+                            tint = accent
+                        )
+                    }
+                }
 
-            Spacer(modifier = Modifier.width(Spacing.md))
+                Spacer(modifier = Modifier.width(Spacing.md))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = alert.title,
-                    fontSize = TypeSize.body,
-                    fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = accent.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = kindLabel,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = accent,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
 
-                if (alert.routeCodes.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        alert.routeCodes.take(5).forEach { code ->
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(Radius.sm)
-                            ) {
+                        if (alert.published.isNotBlank()) {
+                            Text(
+                                text = alert.published,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = TabularNums
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = alert.title,
+                        fontSize = TypeSize.body,
+                        fontWeight = if (isUnread) FontWeight.Bold else FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    if (!isExpanded && alert.routeCodes.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                            alert.routeCodes.take(5).forEach { code ->
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(Radius.sm)
+                                ) {
+                                    Text(
+                                        text = code,
+                                        fontSize = TypeSize.caption,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                    )
+                                }
+                            }
+                            if (alert.routeCodes.size > 5) {
                                 Text(
-                                    text = code,
+                                    text = "+${alert.routeCodes.size - 5}",
                                     fontSize = TypeSize.caption,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.align(Alignment.CenterVertically)
                                 )
                             }
-                        }
-                        if (alert.routeCodes.size > 5) {
-                            Text(
-                                text = "+${alert.routeCodes.size - 5}",
-                                fontSize = TypeSize.caption,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.align(Alignment.CenterVertically)
-                            )
                         }
                     }
                 }
 
-                if (alert.published.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = alert.published,
-                        fontSize = TypeSize.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = TabularNums
+                Spacer(modifier = Modifier.width(Spacing.xs))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isUnread) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Accent, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+
+                    LucideIcon(
+                        drawableId = R.drawable.ic_lucide_chevron_down,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand details",
+                        size = 18.dp,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(rotationDegrees)
                     )
                 }
             }
 
-            if (isUnread) {
-                Spacer(modifier = Modifier.width(Spacing.xs))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Unread marker
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .size(7.dp)
-                            .background(Accent, CircleShape)
+            // Expanded detail section
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(Spacing.sm))
+
+                // Detail / Excerpt container
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(Radius.sm),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "UPDATE DETAILS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = accent,
+                            letterSpacing = 0.5.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (alert.excerpt.isNotBlank()) alert.excerpt else "No additional description in bulletin header. Tap below to read full announcement.",
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                // Affected routes (interactive)
+                if (alert.routeCodes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Text(
+                        text = "Affected routes (tap to view live):",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(Spacing.xs))
-                    // Per-notification mark-as-read
-                    IconButton(
-                        onClick = onMarkRead,
-                        modifier = Modifier.size(48.dp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(Radius.sm),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Box(
-                                modifier = Modifier.size(32.dp),
-                                contentAlignment = Alignment.Center
+                        alert.routeCodes.forEach { code ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(Radius.sm),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 44.dp)
+                                    .clickable { onRouteClick(code) }
                             ) {
-                                LucideIcon(
-                                    drawableId = R.drawable.ic_lucide_check,
-                                    contentDescription = "Mark as read",
-                                    size = 16.dp,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    LucideIcon(
+                                        drawableId = R.drawable.ic_lucide_bus,
+                                        contentDescription = null,
+                                        size = 12.dp,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = code,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
                         }
+                    }
+                }
+
+                // Action button: Open full official bulletin
+                if (alert.url.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Button(
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(alert.url))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        },
+                        shape = RoundedCornerShape(Radius.sm),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = accent.copy(alpha = 0.15f),
+                            contentColor = accent
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        LucideIcon(
+                            drawableId = R.drawable.ic_lucide_globe,
+                            contentDescription = null,
+                            size = 16.dp,
+                            tint = accent
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.xs))
+                        Text(
+                            text = "Open Official Bulletin on MyRapid",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
