@@ -1,6 +1,7 @@
 package my.feeder.app.ui.screens
 
 import my.feeder.app.R
+import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideAnimatedBell
 import my.feeder.app.ui.components.LucideIcon
 
@@ -98,10 +99,10 @@ fun AlertsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
+        MaxWidthContainer(modifier = modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier
+                .fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -170,6 +171,7 @@ fun AlertsScreen(
                 }
             }
         }
+    }
     }
 }
 

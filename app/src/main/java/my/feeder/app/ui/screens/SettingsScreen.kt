@@ -2,6 +2,7 @@ package my.feeder.app.ui.screens
 
 import my.feeder.app.R
 import my.feeder.app.BuildConfig
+import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 
 import androidx.compose.foundation.background
@@ -49,10 +50,10 @@ fun SettingsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
+        MaxWidthContainer(modifier = modifier.fillMaxSize().padding(padding)) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
@@ -160,6 +161,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(horizontal = Spacing.xs)
             )
         }
+    }
     }
 }
 

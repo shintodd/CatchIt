@@ -3,6 +3,7 @@ package my.feeder.app.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import my.feeder.app.R
+import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 import my.feeder.app.ui.components.StaggeredRow
 import my.feeder.app.ui.components.pressScale
@@ -157,12 +158,13 @@ fun HomeScreen(
     val liveTotal = remember(liveCounts) { liveCounts.values.sum() }
     val isLoading = routes.isEmpty()
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = Spacing.lg)
-    ) {
+    MaxWidthContainer(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(bottom = Spacing.lg)
+        ) {
         item {
             HeroHeader(
                 stationCode = activeStationCode,
@@ -246,6 +248,7 @@ fun HomeScreen(
                 )
             }
         }
+    }
     }
 }
 

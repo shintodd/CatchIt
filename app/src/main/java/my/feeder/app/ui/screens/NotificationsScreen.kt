@@ -4,6 +4,7 @@ import my.feeder.app.R
 import android.content.Context
 import android.content.ContextWrapper
 import my.feeder.app.data.ServiceAlertsRepository
+import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 
 import androidx.compose.foundation.background
@@ -107,10 +108,10 @@ fun NotificationsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
+        MaxWidthContainer(modifier = modifier.fillMaxSize().padding(padding)) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
         ) {
             // === FILTER TABS (scrollable so they never clip on narrow screens) ===
             Row(
@@ -264,7 +265,8 @@ fun NotificationsScreen(
                             text = if (unreadCount == 1) "Mark 1 as read" else "Mark all $unreadCount as read",
                             fontSize = TypeSize.caption,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -335,6 +337,7 @@ fun NotificationsScreen(
                 }
             }
         }
+    }
     }
 }
 
