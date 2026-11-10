@@ -65,13 +65,13 @@ def make_hero_banner():
     
     # Kicker / Super-tagline
     kicker_font = get_font(FONT_BOLD, 15)
-    kicker = "DIRECT PRASARANA AVL TELEMETRY · 2-STAGE ALARMS · 100% OFFLINE CATALOG"
+    kicker = "OPEN TRANSIT DATA · 2-STAGE ARRIVAL ALARMS · OFFLINE STOP DIRECTORY"
     kw = kicker_font.getlength(kicker)
     draw.text(((W - kw) // 2, 215), kicker, font=kicker_font, fill=(46, 204, 113, 255))
 
     # Subtitle
     sub_font = get_font(FONT_REG, 23)
-    subtitle = "Ultra-Fast, Native Real-Time Transit Tracker for Malaysia"
+    subtitle = "Lightweight, Native Real-Time Transit Tracker for Malaysia"
     sw = sub_font.getlength(subtitle)
     draw.text(((W - sw) // 2, 245), subtitle, font=sub_font, fill=(240, 246, 250, 255))
 
@@ -174,11 +174,11 @@ def make_feature_showcase():
     title_font = get_font(FONT_BOLD, 36)
     sub_font = get_font(FONT_REG, 20)
     
-    title = "Engineered for Malaysian Commuters"
+    title = "Built for Daily Bus Commuters"
     tw = title_font.getlength(title)
     draw.text(((W - tw) // 2, 40), title, font=title_font, fill=(255, 255, 255, 255))
 
-    sub = "Real-Time GPS · Smart Offline Catalog · 2-Stage Departure Alarms · Instant OLED Dark Mode"
+    sub = "Real-Time Telemetry · Landmark Stop Search · 2-Stage Departure Alarms · OLED Dark Mode"
     sw = sub_font.getlength(sub)
     draw.text(((W - sw) // 2, 88), sub, font=sub_font, fill=(160, 185, 172, 255))
 
@@ -187,10 +187,10 @@ def make_feature_showcase():
         todak_path = os.path.join(STORE_SCREENSHOTS, "03_route_live_map.png")
 
     screens = [
-        (os.path.join(STORE_SCREENSHOTS, "01_bus_home.png"), "1. Live Bus Radar", "Instant next arrival ETAs & live status"),
-        (todak_path, "2. Destination Search", "Find nearest stops by landmarks & walking distance"),
-        (os.path.join(STORE_SCREENSHOTS, "07_alarm_setup.png"), "3. 2-Stage Alarms", "Wakeup warning & departure arrival ring"),
-        (os.path.join(ART_DIR, "home_dark_screen.png"), "4. OLED Dark Mode", "Pitch-black UI crafted for evening commutes")
+        (os.path.join(STORE_SCREENSHOTS, "01_bus_home.png"), "1. Live Bus Radar", "Arrival times with live AVL tracking"),
+        (todak_path, "2. Destination Search", "Locate nearest stops by landmarks & walking distance"),
+        (os.path.join(STORE_SCREENSHOTS, "07_alarm_setup.png"), "3. 2-Stage Alarms", "Warning alert at checkpoint + departure ring"),
+        (os.path.join(ART_DIR, "home_dark_screen.png"), "4. OLED Dark Mode", "High-contrast dark theme for night commutes")
     ]
 
     card_w = 340
@@ -237,11 +237,11 @@ def make_theme_comparison():
     t_font = get_font(FONT_BOLD, 30)
     s_font = get_font(FONT_REG, 17)
     
-    title = "Adaptive Design: Light Mode vs OLED Dark Mode"
+    title = "Adaptive Design: Light & OLED Dark Mode"
     tw = t_font.getlength(title)
     draw.text(((W - tw) // 2, 32), title, font=t_font, fill=(255, 255, 255, 255))
 
-    sub = "Seamless manual toggle in Settings with instant real-time theme switching"
+    sub = "Manual switch in Settings between System, Light, and Dark mode"
     sw = s_font.getlength(sub)
     draw.text(((W - sw) // 2, 72), sub, font=s_font, fill=(160, 185, 172, 255))
 
@@ -276,13 +276,13 @@ def make_theme_comparison():
 
     lx = start_x + card_w // 2
     l_txt = "Daylight Clarity (Light)"
-    l_sub = "High contrast in direct sunlight"
+    l_sub = "Clean contrast for daytime viewing"
     draw.text((lx - lbl_font.getlength(l_txt) // 2, top_y + card_h + 14), l_txt, font=lbl_font, fill=(240, 246, 250, 255))
     draw.text((lx - sub_lbl_font.getlength(l_sub) // 2, top_y + card_h + 38), l_sub, font=sub_lbl_font, fill=(160, 180, 170, 255))
 
     dx = start_x + card_w + gap + card_w // 2
     d_txt = "Pure Pitch Black (OLED Dark)"
-    d_sub = "#000000 true black, zero eye strain"
+    d_sub = "#000000 true black for night commutes"
     draw.text((dx - lbl_font.getlength(d_txt) // 2, top_y + card_h + 14), d_txt, font=lbl_font, fill=(46, 204, 113, 255))
     draw.text((dx - sub_lbl_font.getlength(d_sub) // 2, top_y + card_h + 38), d_sub, font=sub_lbl_font, fill=(160, 180, 170, 255))
 

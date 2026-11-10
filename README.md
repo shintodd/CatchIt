@@ -14,9 +14,9 @@
 
 <br/>
 
-**Ultra-fast, native real-time MRT feeder bus & transit tracker for Malaysia.**  
-Built 100% with Kotlin & Jetpack Compose. Answers the only question Malaysian commuters care about:  
-*When does my bus arrive, and when should I walk to the curb?*
+**Native real-time MRT feeder bus tracker for Malaysia.**  
+Built with Kotlin & Jetpack Compose. Answers the daily transit question:  
+*When does my feeder bus arrive, and when should I walk to the stop?*
 
 <br/>
 
@@ -46,20 +46,20 @@ Built 100% with Kotlin & Jetpack Compose. Answers the only question Malaysian co
 
 | Feature | Description |
 | :--- | :--- |
-| 🛰️ **Direct AVL Telemetry** | 30-second live vehicle positioning direct from Prasarana & `data.gov.my` GTFS-RT APIs with stale-feed freshness badges. |
-| 🏢 **Smart Destination Search** | Search any landmark, university, or mall (*Todak Academy, Dpulze, Sunway Pyramid, KLCC*) to get nearest bus stop, walking distance, and routes. |
-| 🔔 **2-Stage Departure Alarms** | Set your stop — CatchIt alerts you when the bus hits your warning checkpoint, then rings when it reaches your pickup curb. |
-| ⚠️ **Live Service Disruption Alerts** | Instant notifications for route diversions, road closures, and maintenance synced in background via `WorkManager`. |
-| 🌙 **OLED Dark Mode** | Manual 3-way toggle (`System` / `Light` / `Dark`) with instant reactive theme switching and `#000000` true-black canvas. |
-| 🔄 **Silent In-App Auto Updates** | Background checks via GitHub Releases API with 1-tap installation — zero Google Play Services or bloatware required. |
-| 📦 **Ultra Lightweight (2.8 MB)** | R8 full-mode minification with stripped debug metadata. Lightning fast cold start on any Android device. |
-| 🗺️ **Nationwide Transit Directory** | Offline catalog spanning all 91 MRT feeder routes plus networks across Selangor, Kuala Lumpur, Penang, Johor, and Perak. |
+| 🛰️ **Open AVL Telemetry** | 30-second live vehicle positioning from Prasarana & `data.gov.my` open GTFS-RT feeds with freshness indicators. |
+| 🏢 **Landmark & Stop Search** | Search common landmarks, colleges, and malls (*Todak Academy, Dpulze, Sunway Pyramid, KLCC*) to see nearest stops and walking distance. |
+| 🔔 **2-Stage Departure Alarms** | Set your stop — get an early alert when the bus reaches your warning stop, then a ring when it reaches your pickup stop. |
+| ⚠️ **Live Service Alerts** | Route diversions, road closures, and maintenance alerts synced periodically in background via `WorkManager`. |
+| 🌙 **OLED Dark & Light Modes** | Manual 3-way toggle (`System` / `Light` / `Dark`) with reactive theme switching and `#000000` dark canvas. |
+| 🔄 **In-App Update Checker** | Background version check against GitHub Releases with 1-tap APK install prompt — no app store account required. |
+| 📦 **Compact APK (2.8 MB)** | R8 full-mode minification with stripped debug metadata for fast installation and low storage footprint. |
+| 🗺️ **MRT Feeder Stop Catalog** | Offline catalog covering all 91 Rapid KL MRT feeder routes (T-routes) across Klang Valley. |
 
 ---
 
 ## 🌓 Adaptive Design: Light & OLED Dark Mode
 
-CatchIt is engineered for high legibility under direct Malaysian sunlight and zero eye fatigue during night-time commutes.
+CatchIt provides clear readability for daytime travel and an OLED dark theme for night-time commutes.
 
 <div align="center">
   <img src="docs/images/catchit_theme_comparison.png" alt="CatchIt Theme Comparison" width="95%">
