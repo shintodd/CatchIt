@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
@@ -141,7 +142,7 @@ object NotificationNavigation {
 data class SelectedAlertTarget(
     val routeCode: String,
     val routeHeadsign: String = ""
-)
+) : java.io.Serializable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,10 +216,10 @@ fun FeederAppNavigation() {
         }
     }
 
-    var selectedAlertTarget by remember { mutableStateOf<SelectedAlertTarget?>(null) }
-    var showStationHubSheet by remember { mutableStateOf(false) }
-    var activeStationName by remember { mutableStateOf("MRT Phileo Damansara") }
-    var activeStationCode by remember { mutableStateOf("KG12") }
+    var selectedAlertTarget by rememberSaveable { mutableStateOf<SelectedAlertTarget?>(null) }
+    var showStationHubSheet by rememberSaveable { mutableStateOf(false) }
+    var activeStationName by rememberSaveable { mutableStateOf("MRT Phileo Damansara") }
+    var activeStationCode by rememberSaveable { mutableStateOf("KG12") }
 
     val alertSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val stationSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

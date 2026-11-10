@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -69,7 +70,7 @@ fun NotificationsScreen(
     val lastFetchedAt by ServiceAlertsRepository.lastFetchedAt.collectAsState()
     val readUrls by ServiceAlertsRepository.readUrls.collectAsState()
 
-    var filter by remember { mutableStateOf(Filter.ALL) }
+    var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
 
     val visible = remember(alerts, filter) {
         alerts.filter { filter.matches(it) }

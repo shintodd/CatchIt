@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -82,7 +83,7 @@ fun TwoStageAlertSheet(
             resolveStop(stops, existing?.stage2StopName) ?: stops.lastOrNull()
         )
     }
-    var pickingFor by remember { mutableStateOf<Int?>(null) }   // 1 or 2
+    var pickingFor by rememberSaveable { mutableStateOf<Int?>(null) }   // 1 or 2
 
     val isArmed = existing != null
     val sameStop = stage1Stop?.id == stage2Stop?.id
