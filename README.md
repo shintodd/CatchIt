@@ -1,46 +1,130 @@
-# CatchIt 🚌
+<div align="center">
 
-**Real-Time MRT Feeder & Transit Tracker for Malaysia**
+<img src="docs/images/catchit_hero_banner.png" alt="CatchIt Banner" width="100%">
 
-CatchIt is a native, ultra-lightweight (2.8 MB) Android transit app built with Jetpack Compose. It answers one simple question for Malaysian commuters: **When does my bus arrive, and when should I walk to the curb?**
+<br/>
 
----
+[![Latest Release](https://img.shields.io/github/v/release/shintodd/CatchIt?color=2ECC71&label=release&logo=github&style=flat-square)](https://github.com/shintodd/CatchIt/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://android.com)
+[![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![APK Size](https://img.shields.io/badge/APK%20Size-2.8%20MB-2ECC71?style=flat-square&logo=speedtest&logoColor=white)](https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-105%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](https://github.com/shintodd/CatchIt/actions)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-## ✨ Features
+<br/>
 
-- **Live Bus GPS Tracking**: Direct 30-second live AVL updates via `data.gov.my` and Prasarana feeds with freshness indicators.
-- **Smart Destination Search**: Type landmarks, universities, malls, or complexes (*Dpulze, Todak Academy, Sunway Pyramid, KLCC*) and instantly get the nearest bus stop, walking distance, and exact route code.
-- **2-Stage Departure Alarms**: Set an alarm for your stop — CatchIt alerts you when the bus passes your warning checkpoint, then rings when it reaches your pickup curb.
-- **Real-Time Service Alerts**: Instant alerts for breakdowns, route diversions, road closures, and delays with background sync.
-- **Nationwide Transit Catalog**: Instant offline directory of all 91 MRT feeder routes plus nationwide bus networks across Selangor, KL, Penang, Johor, and Perak.
-- **Appearance Settings**: Seamless manual switch between **System**, **Light**, and deep OLED **Dark Mode**.
-- **In-App Auto-Updates**: Silent background check with 1-tap seamless installation via GitHub Releases — no Google Play Store account or bloatware needed.
+**Ultra-fast, native real-time MRT feeder bus & transit tracker for Malaysia.**  
+Built 100% with Kotlin & Jetpack Compose. Answers the only question Malaysian commuters care about:  
+*When does my bus arrive, and when should I walk to the curb?*
 
----
+<br/>
 
-## 📲 Download & Installation
+<p align="center">
+  <a href="https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk">
+    <img src="https://img.shields.io/badge/DOWNLOAD%20APK-v1.1.0%20(2.8%20MB)-2ECC71?style=for-the-badge&logo=android&logoColor=white" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/shintodd/CatchIt/releases/latest">
+    <img src="https://img.shields.io/badge/RELEASE%20NOTES-v1.1.0-1B2836?style=for-the-badge&logo=github&logoColor=white" height="42">
+  </a>
+</p>
 
-Download the latest APK release from [GitHub Releases](https://github.com/shintodd/CatchIt/releases/latest).
-
-1. Download `CatchIt-v1.1.0.apk`.
-2. Tap the downloaded file on your Android device.
-3. Allow installation from your browser/file manager when prompted.
-4. Open **CatchIt** — future updates can be installed with a single tap inside the app.
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Language & UI**: 100% Kotlin & Jetpack Compose (Material 3).
-- **Architecture**: Clean Architecture with reactive Kotlin Flows and Repository pattern.
-- **Concurrency**: Kotlin Coroutines (`Dispatchers.IO`, `SupervisorJob`).
-- **Background Work**: AndroidX `WorkManager` for persistent 15-minute background disruption polls and alarm tracking.
-- **Size Optimization**: ProGuard / R8 full-mode minification with stripped debug symbols $\rightarrow$ **2.81 MB release APK**.
-- **Edge-to-Edge**: Fully compliant with Android 15 edge-to-edge drawing and dynamic status bar padding.
+</div>
 
 ---
 
-## 📄 License & Open Data
+## 📱 App Showcase
 
-- Bus positions & AVL telemetry: Prasarana Malaysia Berhad.
-- Schedules, routes & stop locations: `data.gov.my` (Open Government Licence - Malaysia).
+<div align="center">
+  <img src="docs/images/catchit_showcase.png" alt="CatchIt Feature Showcase" width="100%">
+</div>
+
+---
+
+## ⚡ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| 🛰️ **Direct AVL Telemetry** | 30-second live vehicle positioning direct from Prasarana & `data.gov.my` GTFS-RT APIs with stale-feed freshness badges. |
+| 🏢 **Smart Destination Search** | Search any landmark, university, or mall (*Todak Academy, Dpulze, Sunway Pyramid, KLCC*) to get nearest bus stop, walking distance, and routes. |
+| 🔔 **2-Stage Departure Alarms** | Set your stop — CatchIt alerts you when the bus hits your warning checkpoint, then rings when it reaches your pickup curb. |
+| ⚠️ **Live Service Disruption Alerts** | Instant notifications for route diversions, road closures, and maintenance synced in background via `WorkManager`. |
+| 🌙 **OLED Dark Mode** | Manual 3-way toggle (`System` / `Light` / `Dark`) with instant reactive theme switching and `#000000` true-black canvas. |
+| 🔄 **Silent In-App Auto Updates** | Background checks via GitHub Releases API with 1-tap installation — zero Google Play Services or bloatware required. |
+| 📦 **Ultra Lightweight (2.8 MB)** | R8 full-mode minification with stripped debug metadata. Lightning fast cold start on any Android device. |
+| 🗺️ **Nationwide Transit Directory** | Offline catalog spanning all 91 MRT feeder routes plus networks across Selangor, Kuala Lumpur, Penang, Johor, and Perak. |
+
+---
+
+## 🌓 Adaptive Design: Light & OLED Dark Mode
+
+CatchIt is engineered for high legibility under direct Malaysian sunlight and zero eye fatigue during night-time commutes.
+
+<div align="center">
+  <img src="docs/images/catchit_theme_comparison.png" alt="CatchIt Theme Comparison" width="95%">
+</div>
+
+---
+
+## 📲 Installation
+
+### Option 1: Direct APK Download (Recommended)
+1. Download **[`CatchIt-v1.1.0.apk`](https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk)** directly to your Android device.
+2. Open the downloaded file and tap **Install** (allow installation from unknown sources if prompted).
+3. Open **CatchIt** — all future releases can be updated seamlessly with 1 tap in **Settings → Check for Updates**.
+
+### Option 2: Build from Source
+```bash
+# Clone the repository
+git clone https://github.com/shintodd/CatchIt.git
+cd CatchIt
+
+# Run unit test suite (105 tests)
+./gradlew testDebugUnitTest
+
+# Build optimized release APK
+./gradlew assembleRelease
+```
+The output APK will be located at `app/build/outputs/apk/release/app-release.apk`.
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+```
+CatchIt
+├── UI Layer           Jetpack Compose (Material 3) · Unidirectional Data Flow · Dynamic Motion Transitions
+├── Presentation       StateFlow · SharedFlow · Lifecycle-aware ViewModel
+├── Domain Layer       Use Cases · Pure Kotlin Data Models · 2-Stage Alarm State Machine
+├── Data Layer         Prasarana AVL Feeds · data.gov.my GTFS-RT · Offline SQLite Room Catalog
+└── Background Sync    AndroidX WorkManager (15-min background disruption polls & alarms)
+```
+
+- **Language**: Kotlin 2.0
+- **UI Framework**: Jetpack Compose (Material 3)
+- **Async & Concurrency**: Kotlin Coroutines & Flow
+- **Background Tasks**: AndroidX WorkManager
+- **Code Optimization**: ProGuard / R8 Full-Mode
+- **Target SDK**: Android 15 (API 35) with Edge-to-Edge window insets
+- **Min SDK**: Android 8.0 (API 26) — supports over 95% of active Android devices
+- **Test Coverage**: 105 automated unit tests verifying AVL feeds, destination spatial indexing, alarm state transitions, and auto-updater headers.
+
+---
+
+## 📊 Open Data Sources
+
+CatchIt is built on open public transit telemetry provided by the Government of Malaysia and public transport agencies:
+- **Bus Telemetry & AVL**: Prasarana Malaysia Berhad
+- **GTFS Schedules, Routes & Stops**: [`data.gov.my`](https://data.gov.my) under Open Government Licence - Malaysia
+- **Landmark Geocoding**: OpenStreetMap contributors
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
+
+<div align="center">
+  <sub>Built with ❤️ for commuters across Malaysia.</sub>
+</div>
