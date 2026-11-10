@@ -8,7 +8,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://android.com)
 [![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![APK Size](https://img.shields.io/badge/APK%20Size-2.8%20MB-2ECC71?style=flat-square&logo=speedtest&logoColor=white)](https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk)
+[![APK Size](https://img.shields.io/badge/APK%20Size-2.8%20MB-2ECC71?style=flat-square&logo=speedtest&logoColor=white)](https://github.com/shintodd/CatchIt/releases/download/v1.2.0/CatchIt-v1.2.0.apk)
 [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-105%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](https://github.com/shintodd/CatchIt/actions)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -21,12 +21,12 @@ Built with Kotlin & Jetpack Compose. Answers the daily transit question:
 <br/>
 
 <p align="center">
-  <a href="https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk">
-    <img src="https://img.shields.io/badge/DOWNLOAD%20APK-v1.1.0%20(2.8%20MB)-2ECC71?style=for-the-badge&logo=android&logoColor=white" height="42">
+  <a href="https://github.com/shintodd/CatchIt/releases/download/v1.2.0/CatchIt-v1.2.0.apk">
+    <img src="https://img.shields.io/badge/DOWNLOAD%20APK-v1.2.0%20(2.8%20MB)-2ECC71?style=for-the-badge&logo=android&logoColor=white" height="42">
   </a>
   &nbsp;&nbsp;
   <a href="https://github.com/shintodd/CatchIt/releases/latest">
-    <img src="https://img.shields.io/badge/RELEASE%20NOTES-v1.1.0-1B2836?style=for-the-badge&logo=github&logoColor=white" height="42">
+    <img src="https://img.shields.io/badge/RELEASE%20NOTES-v1.2.0-1B2836?style=for-the-badge&logo=github&logoColor=white" height="42">
   </a>
 </p>
 
@@ -70,7 +70,7 @@ CatchIt provides clear readability for daytime travel and an OLED dark theme for
 ## 📲 Installation
 
 ### Option 1: Direct APK Download (Recommended)
-1. Download **[`CatchIt-v1.1.0.apk`](https://github.com/shintodd/CatchIt/releases/download/v1.1.0/CatchIt-v1.1.0.apk)** directly to your Android device.
+1. Download **[`CatchIt-v1.2.0.apk`](https://github.com/shintodd/CatchIt/releases/download/v1.2.0/CatchIt-v1.2.0.apk)** directly to your Android device.
 2. Open the downloaded file and tap **Install** (allow installation from unknown sources if prompted).
 3. Open **CatchIt** — all future releases can be updated seamlessly with 1 tap in **Settings → Check for Updates**.
 

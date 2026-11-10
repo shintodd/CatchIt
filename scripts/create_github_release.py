@@ -16,22 +16,21 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.1.0 🚌\n\n"
-        "Native, ultra-fast real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.1.0\n"
-        "- **Live GPS Tracking**: Direct 30s GTFS-RT feed sync via data.gov.my + Prasarana AVL.\n"
-        "- **Smart Destination Search**: Search by landmarks, universities, malls (Dpulze, Todak Academy, KLCC) with walking distance.\n"
-        "- **2-Stage Departure Alarms**: Curbside and approach alarms with OEM battery whitelisting.\n"
-        "- **Appearance Settings**: Manual switch between System, Light, and deep OLED Dark Mode.\n"
-        "- **In-App Auto-Updates**: Seamless background updates directly from GitHub Releases.\n"
-        "- **Optimized**: 2.8 MB APK built with Jetpack Compose & R8 minification.\n\n"
+        "## CatchIt v1.2.0 🚌\n\n"
+        "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
+        "### What's New in v1.2.0\n"
+        "- **Commute Schedule Window**: Customizable start and end alert window (default `17:10` to `19:10`) with `Mon–Fri` weekday toggle — background alarms and service disruption checks sleep outside commute hours to conserve battery.\n"
+        "- **Refined App Icon**: Rescaled launcher icon with proportional padding across all Android launcher grids and system notification surfaces.\n"
+        "- **Interactive Schedule Controls**: Native `TimePickerDialog` start/end buttons in Settings and live status badge in Alarms.\n"
+        "- **Zero-Slop Telemetry**: Direct GTFS-RT feed sync via data.gov.my + Prasarana AVL.\n"
+        "- **Lightweight (2.8 MB)**: Jetpack Compose + R8 minification.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.1.0.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.0.apk` below and install directly on your Android phone."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.1.0',
-        'name': 'CatchIt v1.1.0',
+        'tag_name': 'v1.2.0',
+        'name': 'CatchIt v1.2.0',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -60,7 +59,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.1.0.apk',
+                f'{upload_url}?name=CatchIt-v1.2.0.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',
