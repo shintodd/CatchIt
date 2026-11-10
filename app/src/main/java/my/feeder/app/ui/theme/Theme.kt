@@ -6,6 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import my.feeder.app.data.ThemeManager
 
 private val LightColorScheme = lightColorScheme(
     primary = PulseGreen900,
@@ -44,8 +45,8 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun FeederMYTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+fun CatchItTheme(
+    darkTheme: Boolean = ThemeManager.isDarkActive(),
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
@@ -53,3 +54,10 @@ fun FeederMYTheme(
         content = content
     )
 }
+
+@Deprecated("Rebranded to CatchItTheme", ReplaceWith("CatchItTheme(darkTheme, content)"))
+@Composable
+fun FeederMYTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) = CatchItTheme(darkTheme = darkTheme, content = content)

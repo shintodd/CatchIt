@@ -8,9 +8,15 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -31,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.feeder.app.data.DepartureAlarmEngine
 import my.feeder.app.data.DepartureAlarmStore
@@ -39,9 +46,10 @@ import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.ServiceAlertsNotifier
 import my.feeder.app.data.ServiceAlertsRepository
 import my.feeder.app.data.ServiceAlertsWorker
+import my.feeder.app.data.ThemeManager
 import my.feeder.app.ui.navigation.FeederBottomNavBar
 import my.feeder.app.ui.screens.*
-import my.feeder.app.ui.theme.FeederMYTheme
+import my.feeder.app.ui.theme.CatchItTheme
 
 /**
  * Set on the intent that opens the app from a service-update notification, so
@@ -79,12 +87,11 @@ class MainActivity : ComponentActivity() {
             // In unit tests WorkManager may not be initialized; ignore
         }
 
-        if (intent?.getBooleanExtra(EXTRA_OPEN_NOTIFICATIONS, false) == true) {
-            NotificationNavigation.pending = true
-        }
+        handleIntentExtras(intent)
+        ThemeManager.init(this)
 
         setContent {
-            FeederMYTheme {
+            CatchItTheme {
                 Surface(
                     // testTagsAsResourceId exposes Compose testTag() values as Android
                     // resource ids, which is what the E2E framework's getByTestId
@@ -125,22 +132,33 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleIntentExtras(intent)
+    }
+
+    private fun handleIntentExtras(intent: android.content.Intent?) {
+        if (intent == null) return
         if (intent.getBooleanExtra(EXTRA_OPEN_NOTIFICATIONS, false)) {
-            NotificationNavigation.pending = true
+            NotificationNavigation.pendingNotifications = true
+        }
+        if (intent.getBooleanExtra(EXTRA_OPEN_ALERMS, false)) {
+            NotificationNavigation.pendingAlarms = true
+        }
+        intent.getStringExtra(EXTRA_ROUTE_CODE)?.let { route ->
+            if (route.isNotBlank()) NotificationNavigation.pendingRouteCode = route
         }
     }
 }
 
 /**
- * Carries "a service-update notification brought the user in" into the
- * composition.
- *
- * It has to be snapshot state: the app is usually already running when the
- * notification is tapped, so the flag is set after the navigation effect has
- * already run. Plain state would never be observed.
+ * Carries "a notification brought the user in" into the composition.
  */
 object NotificationNavigation {
-    var pending by mutableStateOf(false)
+    var pendingNotifications by mutableStateOf(false)
+    var pending: Boolean
+        get() = pendingNotifications
+        set(value) { pendingNotifications = value }
+    var pendingAlarms by mutableStateOf(false)
+    var pendingRouteCode by mutableStateOf<String?>(null)
 }
 
 data class SelectedAlertTarget(
@@ -156,11 +174,14 @@ fun FeederAppNavigation() {
 
     var showSplash by remember { mutableStateOf(true) }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     // Defer heavy data loading until splash finishes so the intro video plays with 0 frame drops
     LaunchedEffect(showSplash) {
         if (!showSplash) {
             withContext(Dispatchers.IO) {
                 GtfsRepository.loadCatalog(context)
+                GtfsRepository.loadNationwideCatalog(context)
                 GtfsRepository.loadSchedules(context)
                 GtfsRepository.initPins(context)
                 GtfsRepository.initAlarms(context)
@@ -168,35 +189,46 @@ fun FeederAppNavigation() {
                 ServiceAlertsWorker.schedule(context)
                 GtfsRepository.refreshLiveBuses()
                 ServiceAlertsRepository.refresh()
-            }
-
-            while (true) {
-                // Upstream data.gov.my refreshes every 30s; match that cadence.
-                delay(30_000L)
-                GtfsRepository.refreshLiveBuses()
-
-                // Check the armed alarms against the fresh positions. While the
-                // app is open this is exact; the background worker is the
-                // best-effort backstop for when it is closed.
-                if (DepartureAlarmStore.load().isNotEmpty()) {
-                    val announcements = DepartureAlarmEngine.evaluate()
-                    if (announcements.isNotEmpty()) {
-                        DepartureAlarmEngine.announce(context, announcements)
-                    }
-                    DepartureAlarmStore.pruneCompleted()
-                }
+                my.feeder.app.data.AppUpdateManager.checkSilently(context)
             }
         }
     }
 
-    // Service alerts: poll every 2 minutes. The proxy allows 20 requests a
-    // minute, so this is well inside the limit, and it is what makes a newly
-    // published disruption show up in about the same time PULSE pushes it.
-    LaunchedEffect(showSplash) {
+    // Lifecycle-aware foreground polling: paused automatically when app is backgrounded
+    LaunchedEffect(showSplash, lifecycleOwner) {
         if (!showSplash) {
-            while (true) {
-                delay(120_000L)
-                ServiceAlertsRepository.refresh()
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 1. Tick freshness counters every second for live UI time-ago displays
+                launch {
+                    while (true) {
+                        delay(1_000L)
+                        GtfsRepository.tickFreshness()
+                    }
+                }
+
+                // 2. Refresh upstream GTFS-RT vehicle positions every 30s
+                launch {
+                    while (true) {
+                        delay(30_000L)
+                        GtfsRepository.refreshLiveBuses()
+
+                        if (DepartureAlarmStore.load().isNotEmpty()) {
+                            val announcements = DepartureAlarmEngine.evaluate()
+                            if (announcements.isNotEmpty()) {
+                                DepartureAlarmEngine.announce(context, announcements)
+                            }
+                            DepartureAlarmStore.pruneCompleted()
+                        }
+                    }
+                }
+
+                // 3. Service alerts: poll every 2 minutes
+                launch {
+                    while (true) {
+                        delay(120_000L)
+                        ServiceAlertsRepository.refresh()
+                    }
+                }
             }
         }
     }
@@ -210,13 +242,26 @@ fun FeederAppNavigation() {
         }
     }
 
-    // A service-update notification opens straight onto the notifications list.
-    // Keyed on the flag so a tap that arrives while the app is already running
-    // still navigates.
-    LaunchedEffect(NotificationNavigation.pending) {
-        if (NotificationNavigation.pending) {
-            NotificationNavigation.pending = false
+    // Deep link navigation from notifications
+    LaunchedEffect(NotificationNavigation.pendingNotifications) {
+        if (NotificationNavigation.pendingNotifications) {
+            NotificationNavigation.pendingNotifications = false
             navController.navigate("notifications")
+        }
+    }
+
+    LaunchedEffect(NotificationNavigation.pendingAlarms) {
+        if (NotificationNavigation.pendingAlarms) {
+            NotificationNavigation.pendingAlarms = false
+            navController.navigate("alerts")
+        }
+    }
+
+    LaunchedEffect(NotificationNavigation.pendingRouteCode) {
+        val route = NotificationNavigation.pendingRouteCode
+        if (!route.isNullOrBlank()) {
+            NotificationNavigation.pendingRouteCode = null
+            navController.navigate("route/$route")
         }
     }
 
@@ -227,6 +272,27 @@ fun FeederAppNavigation() {
 
     val alertSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val stationSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetCoroutineScope = rememberCoroutineScope()
+
+    fun dismissStationSheet() {
+        sheetCoroutineScope.launch {
+            try {
+                stationSheetState.hide()
+            } finally {
+                showStationHubSheet = false
+            }
+        }
+    }
+
+    fun dismissAlertSheet() {
+        sheetCoroutineScope.launch {
+            try {
+                alertSheetState.hide()
+            } finally {
+                selectedAlertTarget = null
+            }
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "home"
@@ -270,63 +336,89 @@ fun FeederAppNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = "home",
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
+                        animationSpec = tween(280, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(280))
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                        animationSpec = tween(280, easing = FastOutSlowInEasing)
+                    ) + fadeOut(animationSpec = tween(280))
+                },
+                popEnterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                        animationSpec = tween(280, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(280))
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
+                        animationSpec = tween(280, easing = FastOutSlowInEasing)
+                    ) + fadeOut(animationSpec = tween(280))
+                }
             ) {
                 composable("home") {
                     HomeScreen(
                         activeStationName = activeStationName,
                         activeStationCode = activeStationCode,
                         onStationPickerClick = { showStationHubSheet = true },
+                        onRouteClick = { code -> navController.navigate("route/$code") },
+                        onOpenNotifications = { navController.navigate("notifications") }
+                    )
+                }
+
+                composable(
+                    "route/{code}",
+                    arguments = listOf(navArgument("code") { type = NavType.StringType })
+                ) { entry ->
+                    val code = entry.arguments?.getString("code") ?: ""
+                    RouteDetailScreen(
+                        routeCode = code,
+                        onBack = { navController.popBackStack() },
+                        onAlertClick = { routeCode, headsign ->
+                            selectedAlertTarget = SelectedAlertTarget(routeCode, headsign)
+                        }
+                    )
+                }
+
+                composable("alerts") {
+                    AlertsScreen(
+                        onOpenNotifications = { navController.navigate("notifications") },
                         onRouteClick = { code -> navController.navigate("route/$code") }
                     )
                 }
 
-            composable(
-                "route/{code}",
-                arguments = listOf(navArgument("code") { type = NavType.StringType })
-            ) { entry ->
-                val code = entry.arguments?.getString("code") ?: ""
-                RouteDetailScreen(
-                    routeCode = code,
-                    onBack = { navController.popBackStack() },
-                    onAlertClick = { routeCode, headsign ->
-                        selectedAlertTarget = SelectedAlertTarget(routeCode, headsign)
-                    }
-                )
-            }
+                composable("notifications") {
+                    NotificationsScreen(
+                        onBack = { navController.popBackStack() },
+                        onRouteClick = { code -> navController.navigate("route/$code") }
+                    )
+                }
 
-            composable("alerts") {
-                AlertsScreen(
-                    onOpenNotifications = { navController.navigate("notifications") }
-                )
-            }
+                composable("settings") {
+                    SettingsScreen(
+                        onOpenOemWizard = { navController.navigate("oem_wizard") }
+                    )
+                }
 
-            composable("notifications") {
-                NotificationsScreen(
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable("settings") {
-                SettingsScreen(
-                    onOpenOemWizard = { navController.navigate("oem_wizard") }
-                )
-            }
-
-            composable("oem_wizard") {
-                OemWizardScreen(
-                    onComplete = { navController.popBackStack() }
-                )
+                composable("oem_wizard") {
+                    OemWizardScreen(
+                        onComplete = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
-}
-}
 
     // Station Hub Bottom Sheet
     if (showStationHubSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showStationHubSheet = false },
+            onDismissRequest = { dismissStationSheet() },
             sheetState = stationSheetState
         ) {
             StationHubSheetContent(
@@ -334,10 +426,10 @@ fun FeederAppNavigation() {
                 onSelectStation = { station ->
                     activeStationName = station.name
                     activeStationCode = station.code
-                    showStationHubSheet = false
+                    dismissStationSheet()
                     Toast.makeText(context, "Switched to ${station.name}", Toast.LENGTH_SHORT).show()
                 },
-                onClose = { showStationHubSheet = false }
+                onClose = { dismissStationSheet() }
             )
         }
     }
@@ -345,14 +437,15 @@ fun FeederAppNavigation() {
     // 2-Stage Departure Alert Bottom Sheet
     selectedAlertTarget?.let { target ->
         ModalBottomSheet(
-            onDismissRequest = { selectedAlertTarget = null },
+            onDismissRequest = { dismissAlertSheet() },
             sheetState = alertSheetState
         ) {
             TwoStageAlertSheet(
                 routeCode = target.routeCode,
                 routeHeadsign = target.routeHeadsign,
-                onDismiss = { selectedAlertTarget = null }
+                onDismiss = { dismissAlertSheet() }
             )
         }
     }
+}
 }

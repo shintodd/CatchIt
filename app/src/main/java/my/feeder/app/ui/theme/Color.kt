@@ -1,6 +1,10 @@
 package my.feeder.app.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import my.feeder.app.data.ThemeManager
 
 // PULSE Green Brand Tokens (High-Contrast & WCAG Compliant)
 val PulseGreen900 = Color(0xFF0F2A1D)  // Deep Forest Ink
@@ -80,3 +84,15 @@ val FeederEmeraldContainer = PulseGreen100
 val FeederBlue = Color(0xFF0284C7)
 val FeederBlueContainer = Color(0xFFE0F2FE)
 val ServiceRapidKlRed = Color(0xFFCC0033)
+
+@Composable
+fun telemetryLiveColor(): Color =
+    if (ThemeManager.isDarkActive()) TelemetryLiveDark else TelemetryLiveLight
+
+@Composable
+fun telemetryDelayedColor(): Color =
+    if (ThemeManager.isDarkActive()) TelemetryDelayedDark else TelemetryDelayedLight
+
+@Composable
+fun telemetryStaleColor(): Color =
+    if (ThemeManager.isDarkActive()) TelemetryStaleDark else TelemetryStaleLight

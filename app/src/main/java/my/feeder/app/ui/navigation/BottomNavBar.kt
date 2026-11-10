@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import my.feeder.app.R
+import my.feeder.app.data.ThemeManager
 import my.feeder.app.ui.components.LucideNavIcon
 import my.feeder.app.ui.theme.*
 
@@ -30,7 +31,7 @@ fun FeederBottomNavBar(
     onTabSelected: (FeederNavTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = ThemeManager.isDarkActive()
 
     NavigationBar(
         modifier = modifier.fillMaxWidth(),

@@ -41,6 +41,15 @@
 -keep class my.feeder.app.data.DepartureAlarmEngine { *; }
 -keep class my.feeder.app.data.DepartureAlarmNotifier { *; }
 -keep class my.feeder.app.data.ServiceAlertsNotifier { *; }
+-keep class my.feeder.app.data.DestinationSearchEngine { *; }
+-keep class my.feeder.app.data.NationwideTransitCatalog { *; }
+-keep class my.feeder.app.data.NationwideRoute { *; }
+-keep class my.feeder.app.data.DestinationResult { *; }
+-keep class my.feeder.app.data.AppUpdateManager { *; }
+-keep class my.feeder.app.data.AppUpdate { *; }
+-keep class my.feeder.app.data.UpdateStatus { *; }
+-keep class my.feeder.app.data.ThemeManager { *; }
+-keep class my.feeder.app.data.AppThemeMode { *; }
 
 # --- Compose ---
 -dontwarn androidx.compose.**
