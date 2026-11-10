@@ -31,6 +31,12 @@ class ServiceAlertsWorker(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         ServiceAlertsRepository.init(applicationContext)
+        AlertScheduleManager.init(applicationContext)
+
+        if (!AlertScheduleManager.isWithinActiveWindow()) {
+            return@withContext Result.success()
+        }
+
         try {
             // The worker has no collector on the repository's new-alert flow,
             // so it raises the notifications itself.

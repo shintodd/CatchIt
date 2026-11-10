@@ -5,10 +5,12 @@ import my.feeder.app.BuildConfig
 import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.AppThemeMode
 import my.feeder.app.data.AppUpdateManager
 import my.feeder.app.data.DepartureAlarmStore
@@ -42,6 +45,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val updateStatus by AppUpdateManager.updateStatus.collectAsState()
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
+    val scheduleConfig by AlertScheduleManager.config.collectAsState()
     val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
@@ -106,7 +110,242 @@ fun SettingsScreen(
                 }
             }
 
-            // 2. BATTERY
+            // 2. COMMUTE SCHEDULE (START & END TIMER)
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(Radius.lg),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(Spacing.lg)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                LucideIcon(
+                                    drawableId = R.drawable.ic_lucide_clock,
+                                    contentDescription = "Alert schedule",
+                                    size = 18.dp,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(Spacing.md))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Commute schedule",
+                                fontSize = TypeSize.title,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Active window for alarms & alerts",
+                                fontSize = TypeSize.caption,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = scheduleConfig.enabled,
+                            onCheckedChange = { AlertScheduleManager.update(enabled = it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+
+                    val isWithinWindow = remember(scheduleConfig) {
+                        AlertScheduleManager.isWithinActiveWindow()
+                    }
+                    val statusText = remember(scheduleConfig) {
+                        AlertScheduleManager.getStatusSummary()
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(Radius.sm),
+                        color = if (!scheduleConfig.enabled) {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        } else if (isWithinWindow) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (!scheduleConfig.enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else if (isWithinWindow) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outline
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Text(
+                                text = statusText,
+                                fontSize = TypeSize.caption,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (scheduleConfig.enabled && isWithinWindow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    }
+
+                    if (scheduleConfig.enabled) {
+                        Spacer(modifier = Modifier.height(Spacing.md))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        ) {
+                            // Start Time Button
+                            Surface(
+                                shape = RoundedCornerShape(Radius.md),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        TimePickerDialog(
+                                            context,
+                                            { _, hour, minute ->
+                                                AlertScheduleManager.update(startHour = hour, startMinute = minute)
+                                            },
+                                            scheduleConfig.startHour,
+                                            scheduleConfig.startMinute,
+                                            true
+                                        ).show()
+                                    }
+                            ) {
+                                Column(modifier = Modifier.padding(Spacing.md)) {
+                                    Text(
+                                        text = "Start time",
+                                        fontSize = TypeSize.caption,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = scheduleConfig.startTimeFormatted,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = TabularNums
+                                    )
+                                }
+                            }
+
+                            // End Time Button
+                            Surface(
+                                shape = RoundedCornerShape(Radius.md),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        TimePickerDialog(
+                                            context,
+                                            { _, hour, minute ->
+                                                AlertScheduleManager.update(endHour = hour, endMinute = minute)
+                                            },
+                                            scheduleConfig.endHour,
+                                            scheduleConfig.endMinute,
+                                            true
+                                        ).show()
+                                    }
+                            ) {
+                                Column(modifier = Modifier.padding(Spacing.md)) {
+                                    Text(
+                                        text = "End time",
+                                        fontSize = TypeSize.caption,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = scheduleConfig.endTimeFormatted,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = TabularNums
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+
+                        // Active Days Toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(Radius.pill)
+                                )
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val isWeekdays = scheduleConfig.weekdaysOnly
+                            Surface(
+                                shape = RoundedCornerShape(Radius.pill),
+                                color = if (isWeekdays) MaterialTheme.colorScheme.surface else Color.Transparent,
+                                shadowElevation = if (isWeekdays) 2.dp else 0.dp,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { AlertScheduleManager.update(weekdaysOnly = true) }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Mon–Fri only",
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isWeekdays) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isWeekdays) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(Radius.pill),
+                                color = if (!isWeekdays) MaterialTheme.colorScheme.surface else Color.Transparent,
+                                shadowElevation = if (!isWeekdays) 2.dp else 0.dp,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { AlertScheduleManager.update(weekdaysOnly = false) }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Every day",
+                                        fontSize = 12.sp,
+                                        fontWeight = if (!isWeekdays) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (!isWeekdays) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. BATTERY
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(Radius.lg),

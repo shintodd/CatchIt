@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.DepartureAlert
 import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.ServiceAlertsRepository
@@ -113,6 +114,57 @@ fun AlertsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // === COMMUTE SCHEDULE STATUS ===
+            item {
+                val scheduleConfig by AlertScheduleManager.config.collectAsState()
+                val isWithinWindow = remember(scheduleConfig) {
+                    AlertScheduleManager.isWithinActiveWindow()
+                }
+                val summary = remember(scheduleConfig) {
+                    AlertScheduleManager.getStatusSummary()
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(Radius.md),
+                    color = if (!scheduleConfig.enabled) {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    } else if (isWithinWindow) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LucideIcon(
+                            drawableId = R.drawable.ic_lucide_clock,
+                            contentDescription = "Alert schedule",
+                            size = 16.dp,
+                            tint = if (scheduleConfig.enabled && isWithinWindow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                        Text(
+                            text = summary,
+                            fontSize = TypeSize.caption,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (scheduleConfig.enabled && isWithinWindow) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
             // === YOUR ALARMS (the app's core feature — first) ===
             if (alerts.isEmpty()) {
                 item { NoAlarmsHint() }

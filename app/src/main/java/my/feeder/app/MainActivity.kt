@@ -39,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.DepartureAlarmEngine
 import my.feeder.app.data.DepartureAlarmStore
 import my.feeder.app.data.DepartureAlarmWorker
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
         }
 
         handleIntentExtras(intent)
+        AlertScheduleManager.init(this)
         ThemeManager.init(this)
 
         setContent {

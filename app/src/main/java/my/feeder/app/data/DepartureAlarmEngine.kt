@@ -41,6 +41,8 @@ object DepartureAlarmEngine {
      * @return the announcements to post, in the order they should be posted.
      */
     fun evaluate(): List<Announcement> {
+        if (!AlertScheduleManager.isWithinActiveWindow()) return emptyList()
+
         val alarms = DepartureAlarmStore.load()
         if (alarms.isEmpty()) return emptyList()
 

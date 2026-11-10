@@ -44,6 +44,8 @@ object ServiceAlertsNotifier {
     fun notifyNew(context: Context, alerts: List<ServiceAlertsRepository.ServiceAlert>): Int {
         if (alerts.isEmpty()) return 0
         if (!canNotify(context)) return 0
+        AlertScheduleManager.init(context)
+        if (!AlertScheduleManager.isWithinActiveWindow()) return 0
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannel(manager)

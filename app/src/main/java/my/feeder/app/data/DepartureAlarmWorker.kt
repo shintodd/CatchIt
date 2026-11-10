@@ -34,6 +34,16 @@ class DepartureAlarmWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             DepartureAlarmStore.init(applicationContext)
+            AlertScheduleManager.init(applicationContext)
+
+            // Outside active commute window: skip heavy GTFS download to conserve battery,
+            // but keep next check scheduled while alarms remain armed.
+            if (!AlertScheduleManager.isWithinActiveWindow()) {
+                if (DepartureAlarmStore.load().isNotEmpty()) {
+                    scheduleNext(applicationContext)
+                }
+                return@withContext Result.success()
+            }
 
             // Refresh the fleet so the ETA is against real positions, not the
             // last thing the app happened to see.
