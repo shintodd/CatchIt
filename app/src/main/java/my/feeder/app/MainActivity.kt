@@ -166,6 +166,13 @@ data class SelectedAlertTarget(
     val routeHeadsign: String = ""
 ) : java.io.Serializable
 
+private fun getNavTabIndex(route: String?): Int = when (route?.substringBefore('/')) {
+    "home" -> 0
+    "alerts" -> 1
+    "settings" -> 2
+    else -> -1
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeederAppNavigation() {
@@ -338,28 +345,68 @@ fun FeederAppNavigation() {
                 startDestination = "home",
                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                 enterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
-                        animationSpec = tween(280, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(280))
+                    val initialTab = getNavTabIndex(initialState.destination.route)
+                    val targetTab = getNavTabIndex(targetState.destination.route)
+                    if (initialTab != -1 && targetTab != -1) {
+                        val sign = if (targetTab > initialTab) 1 else -1
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> (fullWidth * 0.2f * sign).toInt() },
+                            animationSpec = tween(240, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(240))
+                    } else {
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> (fullWidth * 0.25f).toInt() },
+                            animationSpec = tween(260, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(260))
+                    }
                 },
                 exitTransition = {
-                    slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
-                        animationSpec = tween(280, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(280))
+                    val initialTab = getNavTabIndex(initialState.destination.route)
+                    val targetTab = getNavTabIndex(targetState.destination.route)
+                    if (initialTab != -1 && targetTab != -1) {
+                        val sign = if (targetTab > initialTab) -1 else 1
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> (fullWidth * 0.2f * sign).toInt() },
+                            animationSpec = tween(240, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(240))
+                    } else {
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                            animationSpec = tween(260, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(260))
+                    }
                 },
                 popEnterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
-                        animationSpec = tween(280, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(280))
+                    val initialTab = getNavTabIndex(initialState.destination.route)
+                    val targetTab = getNavTabIndex(targetState.destination.route)
+                    if (initialTab != -1 && targetTab != -1) {
+                        val sign = if (targetTab > initialTab) 1 else -1
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> (fullWidth * 0.2f * sign).toInt() },
+                            animationSpec = tween(240, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(240))
+                    } else {
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                            animationSpec = tween(260, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(260))
+                    }
                 },
                 popExitTransition = {
-                    slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
-                        animationSpec = tween(280, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(280))
+                    val initialTab = getNavTabIndex(initialState.destination.route)
+                    val targetTab = getNavTabIndex(targetState.destination.route)
+                    if (initialTab != -1 && targetTab != -1) {
+                        val sign = if (targetTab > initialTab) -1 else 1
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> (fullWidth * 0.2f * sign).toInt() },
+                            animationSpec = tween(240, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(240))
+                    } else {
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> (fullWidth * 0.25f).toInt() },
+                            animationSpec = tween(260, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(260))
+                    }
                 }
             ) {
                 composable("home") {
