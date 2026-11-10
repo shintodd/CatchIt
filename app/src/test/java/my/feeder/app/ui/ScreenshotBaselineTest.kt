@@ -14,6 +14,13 @@ import my.feeder.app.ui.screens.HomeScreen
 import my.feeder.app.ui.screens.NotificationsScreen
 import my.feeder.app.ui.screens.SettingsScreen
 import my.feeder.app.ui.screens.StationHubSheetContent
+import my.feeder.app.ui.components.CatchItTimePickerContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import my.feeder.app.ui.theme.CatchItTheme
 import org.junit.Rule
 import org.junit.Test
@@ -73,6 +80,20 @@ class ScreenshotBaselineTest {
     private val settings: @Composable () -> Unit = { SettingsScreen(onOpenOemWizard = {}) }
     private val notifications: @Composable () -> Unit = { NotificationsScreen(onBack = {}) }
     private val stationPicker: @Composable () -> Unit = { StationHubSheetContent(onSelectStation = {}, onClose = {}) }
+    private val timePicker: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CatchItTimePickerContent(
+                title = "Commute start time",
+                initialHour = 17,
+                initialMinute = 10,
+                onConfirm = { _, _ -> },
+                onDismiss = {}
+            )
+        }
+    }
 
     // P1 320x568 @240dpi - smallest realistic phone
     @Config(qualifiers = "w320dp-h568dp") @Test fun home_p1() = capture("home_p1") { home() }
@@ -136,4 +157,5 @@ class ScreenshotBaselineTest {
     @Config(qualifiers = "w360dp-h800dp") @Test fun settings_p9_dark() = capture("settings_p9_dark", fontScale = 1.3f, dark = true) { settings() }
     @Config(qualifiers = "w360dp-h800dp") @Test fun notifications_p9_dark() = capture("notifications_p9_dark", fontScale = 1.3f, dark = true) { notifications() }
     @Config(qualifiers = "w360dp-h800dp") @Test fun stationpicker_p9_dark() = capture("stationpicker_p9_dark", fontScale = 1.3f, dark = true) { stationPicker() }
+    @Config(qualifiers = "w360dp-h800dp") @Test fun timepicker_p9_dark() = capture("timepicker_p9_dark", dark = true) { timePicker() }
 }

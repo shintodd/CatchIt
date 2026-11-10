@@ -4,8 +4,8 @@ import my.feeder.app.R
 import my.feeder.app.BuildConfig
 import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
+import my.feeder.app.ui.components.CatchItTimePickerDialog
 
-import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,6 +32,8 @@ import my.feeder.app.data.ThemeManager
 import my.feeder.app.data.UpdateStatus
 import my.feeder.app.ui.theme.*
 
+private enum class TimePickerTarget { START, END }
+
 /**
  * Settings holds two things only: how early to warn you, and the battery
  * whitelist that keeps those warnings alive. Everything else was cut.
@@ -47,6 +49,7 @@ fun SettingsScreen(
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
     val scheduleConfig by AlertScheduleManager.config.collectAsState()
     val scope = rememberCoroutineScope()
+    var activeTimePickerTarget by remember { mutableStateOf<TimePickerTarget?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -220,17 +223,7 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable {
-                                        TimePickerDialog(
-                                            context,
-                                            { _, hour, minute ->
-                                                AlertScheduleManager.update(startHour = hour, startMinute = minute)
-                                            },
-                                            scheduleConfig.startHour,
-                                            scheduleConfig.startMinute,
-                                            true
-                                        ).show()
-                                    }
+                                    .clickable { activeTimePickerTarget = TimePickerTarget.START }
                             ) {
                                 Column(modifier = Modifier.padding(Spacing.md)) {
                                     Text(
@@ -255,17 +248,7 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable {
-                                        TimePickerDialog(
-                                            context,
-                                            { _, hour, minute ->
-                                                AlertScheduleManager.update(endHour = hour, endMinute = minute)
-                                            },
-                                            scheduleConfig.endHour,
-                                            scheduleConfig.endMinute,
-                                            true
-                                        ).show()
-                                    }
+                                    .clickable { activeTimePickerTarget = TimePickerTarget.END }
                             ) {
                                 Column(modifier = Modifier.padding(Spacing.md)) {
                                     Text(
@@ -620,6 +603,23 @@ fun SettingsScreen(
             )
         }
     }
+    }
+
+    activeTimePickerTarget?.let { target ->
+        CatchItTimePickerDialog(
+            title = if (target == TimePickerTarget.START) "Commute start time" else "Commute end time",
+            initialHour = if (target == TimePickerTarget.START) scheduleConfig.startHour else scheduleConfig.endHour,
+            initialMinute = if (target == TimePickerTarget.START) scheduleConfig.startMinute else scheduleConfig.endMinute,
+            onConfirm = { hour, minute ->
+                if (target == TimePickerTarget.START) {
+                    AlertScheduleManager.update(startHour = hour, startMinute = minute)
+                } else {
+                    AlertScheduleManager.update(endHour = hour, endMinute = minute)
+                }
+                activeTimePickerTarget = null
+            },
+            onDismiss = { activeTimePickerTarget = null }
+        )
     }
 }
 
