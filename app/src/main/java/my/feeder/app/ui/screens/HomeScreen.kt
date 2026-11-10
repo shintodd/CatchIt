@@ -637,7 +637,7 @@ private fun PinnedRouteCard(
         shape = RoundedCornerShape(Radius.lg),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
-            .width(158.dp)
+            .widthIn(min = 158.dp)
             .testTag("pinned-${route.code}")
             .clickable { onClick() }
     ) {

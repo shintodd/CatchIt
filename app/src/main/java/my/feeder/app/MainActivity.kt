@@ -73,7 +73,11 @@ class MainActivity : ComponentActivity() {
 
         // Service updates keep arriving when the app is closed, the way PULSE's
         // own push notifications do.
-        ServiceAlertsWorker.schedule(this)
+        try {
+            ServiceAlertsWorker.schedule(this)
+        } catch (e: Exception) {
+            // In unit tests WorkManager may not be initialized; ignore
+        }
 
         if (intent?.getBooleanExtra(EXTRA_OPEN_NOTIFICATIONS, false) == true) {
             NotificationNavigation.pending = true

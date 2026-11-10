@@ -88,12 +88,26 @@ class ScreenshotBaselineTest {
     @Config(qualifiers = "w360dp-h800dp") @Test fun notifications_p2() = capture("notifications_p2") { notifications() }
     @Config(qualifiers = "w360dp-h800dp") @Test fun stationpicker_p2() = capture("stationpicker_p2") { stationPicker() }
 
+    // P3 412x915 @640dpi - larger modern phone
+    @Config(qualifiers = "w412dp-h915dp") @Test fun home_p3() = capture("home_p3") { home() }
+    @Config(qualifiers = "w412dp-h915dp") @Test fun alarms_p3() = capture("alarms_p3") { alarms() }
+    @Config(qualifiers = "w412dp-h915dp") @Test fun settings_p3() = capture("settings_p3") { settings() }
+    @Config(qualifiers = "w412dp-h915dp") @Test fun notifications_p3() = capture("notifications_p3") { notifications() }
+    @Config(qualifiers = "w412dp-h915dp") @Test fun stationpicker_p3() = capture("stationpicker_p3") { stationPicker() }
+
     // P4 360x640 @480dpi, font scale 2.0 - "Display size: Largest"
     @Config(qualifiers = "w360dp-h640dp") @Test fun home_p4_fs2() = capture("home_p4_fs2", fontScale = 2f) { home() }
     @Config(qualifiers = "w360dp-h640dp") @Test fun alarms_p4_fs2() = capture("alarms_p4_fs2", fontScale = 2f) { alarms() }
     @Config(qualifiers = "w360dp-h640dp") @Test fun settings_p4_fs2() = capture("settings_p4_fs2", fontScale = 2f) { settings() }
     @Config(qualifiers = "w360dp-h640dp") @Test fun notifications_p4_fs2() = capture("notifications_p4_fs2", fontScale = 2f) { notifications() }
     @Config(qualifiers = "w360dp-h640dp") @Test fun stationpicker_p4_fs2() = capture("stationpicker_p4_fs2", fontScale = 2f) { stationPicker() }
+
+    // P5 800x360 @480dpi landscape phone
+    @Config(qualifiers = "w800dp-h360dp-land") @Test fun home_p5() = capture("home_p5") { home() }
+    @Config(qualifiers = "w800dp-h360dp-land") @Test fun alarms_p5() = capture("alarms_p5") { alarms() }
+    @Config(qualifiers = "w800dp-h360dp-land") @Test fun settings_p5() = capture("settings_p5") { settings() }
+    @Config(qualifiers = "w800dp-h360dp-land") @Test fun notifications_p5() = capture("notifications_p5") { notifications() }
+    @Config(qualifiers = "w800dp-h360dp-land") @Test fun stationpicker_p5() = capture("stationpicker_p5") { stationPicker() }
 
     // P6 600x960 @320dpi - unfolded foldable / small tablet
     @Config(qualifiers = "w600dp-h960dp") @Test fun home_p6() = capture("home_p6") { home() }
@@ -108,6 +122,13 @@ class ScreenshotBaselineTest {
     @Config(qualifiers = "w1280dp-h800dp-land") @Test fun settings_p7() = capture("settings_p7") { settings() }
     @Config(qualifiers = "w1280dp-h800dp-land") @Test fun notifications_p7() = capture("notifications_p7") { notifications() }
     @Config(qualifiers = "w1280dp-h800dp-land") @Test fun stationpicker_p7() = capture("stationpicker_p7") { stationPicker() }
+
+    // P8 360x400 @480dpi split-screen window
+    @Config(qualifiers = "w360dp-h400dp") @Test fun home_p8() = capture("home_p8") { home() }
+    @Config(qualifiers = "w360dp-h400dp") @Test fun alarms_p8() = capture("alarms_p8") { alarms() }
+    @Config(qualifiers = "w360dp-h400dp") @Test fun settings_p8() = capture("settings_p8") { settings() }
+    @Config(qualifiers = "w360dp-h400dp") @Test fun notifications_p8() = capture("notifications_p8") { notifications() }
+    @Config(qualifiers = "w360dp-h400dp") @Test fun stationpicker_p8() = capture("stationpicker_p8") { stationPicker() }
 
     // P9 360x800 @480dpi, dark + font scale 1.3
     @Config(qualifiers = "w360dp-h800dp") @Test fun home_p9_dark() = capture("home_p9_dark", fontScale = 1.3f, dark = true) { home() }

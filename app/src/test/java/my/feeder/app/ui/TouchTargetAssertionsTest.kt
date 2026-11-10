@@ -89,4 +89,37 @@ class TouchTargetAssertionsTest {
         assertTabReachable("nav-settings")
         assertTabsNotOverlapping()
     }
+
+    /** P6 600x960 - unfolded foldable / small tablet: tabs reachable, in-bounds. */
+    @Config(qualifiers = "w600dp-h960dp")
+    @Test
+    fun `nav tabs reachable on tablet portrait P6`() {
+        renderNav()
+        assertTabReachable("nav-home")
+        assertTabReachable("nav-alerts")
+        assertTabReachable("nav-settings")
+        assertTabsNotOverlapping()
+    }
+
+    /** P7 1280x800 landscape tablet: tabs reachable, in-bounds. */
+    @Config(qualifiers = "w1280dp-h800dp-land")
+    @Test
+    fun `nav tabs reachable on tablet landscape P7`() {
+        renderNav()
+        assertTabReachable("nav-home")
+        assertTabReachable("nav-alerts")
+        assertTabReachable("nav-settings")
+        assertTabsNotOverlapping()
+    }
+
+    /** P9 360x800 at font scale 1.3: tabs reachable, in-bounds, no overlap. */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun `nav tabs reachable at font scale 1_3 on P9`() {
+        renderNav(fontScale = 1.3f)
+        assertTabReachable("nav-home")
+        assertTabReachable("nav-alerts")
+        assertTabReachable("nav-settings")
+        assertTabsNotOverlapping()
+    }
 }

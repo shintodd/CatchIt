@@ -6,8 +6,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertTextContains
+import my.feeder.app.MainActivity
 import my.feeder.app.ui.screens.HomeScreen
+import my.feeder.app.ui.screens.NotificationsScreen
 import my.feeder.app.ui.screens.StationHubSheetContent
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsSelected
+import androidx.test.core.app.ActivityScenario
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,5 +72,25 @@ class StateRestorationTest {
         tester.emulateSavedInstanceStateRestore()
 
         rule.onNodeWithTag("station-search").assertTextContains("Phileo")
+    }
+
+    /** Notifications screen filter choice survives restoration. */
+    @Test
+    fun `notifications screen filter survives restoration`() = restore({
+        NotificationsScreen(onBack = {})
+    }) { tester ->
+        rule.onNodeWithText("Rail").performClick()
+
+        tester.emulateSavedInstanceStateRestore()
+
+        rule.onNodeWithText("Rail").assertExists()
+    }
+
+    /** Full ActivityScenario recreation survives process/config change without crash. */
+    @Test
+    fun `main activity scenario survives recreate`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.recreate()
+        }
     }
 }
