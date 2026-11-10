@@ -260,7 +260,7 @@ fun TwoStageAlertSheet(
                 )
             },
             text = {
-                LazyColumn(modifier = Modifier.height(360.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
                     items(stops, key = { it.id }) { stop ->
                         val isSelected = current?.id == stop.id
                         Row(
