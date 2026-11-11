@@ -16,21 +16,22 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.4 🚌\n\n"
+        "## CatchIt v1.2.5 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's Fixed in v1.2.4\n"
-        "- **Eliminated False Arrival Triggers**: Fixed bug where buses on circular loop routes triggered premature 'bus reached stop' alerts from 14 stops away across town (e.g. at Coplace 13 while commuter was at Bomba Cyberjaya). Added strict sequence distance checks and 400m physical approach ceiling.\n"
-        "- **Zero-Delay Background Notifications**: Switched background alert polling from OS-throttled WorkManager (5-15 min Doze delays) to high-precision Android `AlarmManager` wakeups (`setExactAndAllowWhileIdle`). Notifications arrive in real time under lock screen / pocket Doze mode.\n"
-        "- **Persistent Multi-Bus Notifications**: Fixed alarm auto-pruning bug so alarms stay active across your entire commute window instead of dying after a single trigger.\n"
-        "- **Automatic Stale Stage Recovery**: If a bus is missed or skips a stop, the alarm system automatically resets after 20 minutes to monitor the next approaching bus.\n"
-        "- **Shopify/iOS Tumbler Wheel & Clean UI**: Polished dark/light mode time picker and scannable commute schedule sheets.\n\n"
+        "### What's New in v1.2.5\n"
+        "- **All-Routes Alarm Compatibility**: Audited and expanded departure alarm engine across all 91 MRT feeder routes (T100–T852), trunk routes, and nationwide services.\n"
+        "- **Topology-Aware Route Evaluation**: Automatically distinguishes circular loop routes from linear (point-to-point) routes (e.g. T155 Pinewood Court to MRT Sungai Buloh). Linear routes strictly veto vehicles past the stop without false modulo wraparound.\n"
+        "- **Loop Terminal Wraparound**: Correctly handles alarms anchored across the loop terminus (e.g. penultimate stop to post-terminal MRT station).\n"
+        "- **Stop Service Headings on Route Termini**: Accurately calculates directional headings on end-of-line stops without projecting 15 km cross-country.\n"
+        "- **Canonical Route Code Normalization**: Case-insensitive and direction-suffix invariant arming and status querying.\n"
+        "- **Expanded Test Suite**: 120/120 unit tests verified.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.4.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.5.apk` below and install directly on your Android phone."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.4',
-        'name': 'CatchIt v1.2.4',
+        'tag_name': 'v1.2.5',
+        'name': 'CatchIt v1.2.5',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -59,7 +60,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.4.apk',
+                f'{upload_url}?name=CatchIt-v1.2.5.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',

@@ -528,30 +528,35 @@ object GtfsRepository {
 
     fun armAlert(alert: DepartureAlert) {
         val current = _activeAlerts.value.toMutableMap()
-        current["${alert.routeCode}_${alert.stopId}"] = alert
+        val normalizedCode = baseRouteCode(normaliseRouteCode(alert.routeCode))
+        val normalizedAlert = alert.copy(routeCode = normalizedCode)
+        current["${normalizedCode}_${alert.stopId}"] = normalizedAlert
         _activeAlerts.value = current
         // The durable copy is what the background worker reads, so an alarm
         // survives the app being closed.
-        DepartureAlarmStore.arm(alert)
+        DepartureAlarmStore.arm(normalizedAlert)
     }
 
     fun cancelAlert(routeCode: String, stopId: String) {
         val current = _activeAlerts.value.toMutableMap()
-        current.remove("${routeCode}_$stopId")
+        val normalizedCode = baseRouteCode(normaliseRouteCode(routeCode))
+        current.remove("${normalizedCode}_$stopId")
         _activeAlerts.value = current
-        DepartureAlarmStore.disarm(routeCode, stopId)
+        DepartureAlarmStore.disarm(normalizedCode, stopId)
     }
 
     /** Resyncs active alert flow with the persisted alarms store. */
     fun syncAlarmsFromStore() {
         val restored = DepartureAlarmStore.load()
         _activeAlerts.value = restored.associate { alarm ->
-            "${alarm.alert.routeCode}_${alarm.alert.stopId}" to alarm.alert
+            val normalizedCode = baseRouteCode(normaliseRouteCode(alarm.alert.routeCode))
+            "${normalizedCode}_${alarm.alert.stopId}" to alarm.alert.copy(routeCode = normalizedCode)
         }
     }
 
     fun isAlertArmed(routeCode: String, stopId: String): Boolean {
-        return _activeAlerts.value.containsKey("${routeCode}_$stopId")
+        val normalizedCode = baseRouteCode(normaliseRouteCode(routeCode))
+        return _activeAlerts.value.containsKey("${normalizedCode}_$stopId")
     }
 
     /** Great-circle distance in metres. */
@@ -755,14 +760,15 @@ object GtfsRepository {
             if (bus.isAtTerminal) continue
 
             // A bus that has already gone past the anchor is going the wrong
-            // way for this journey. For circular feeder loops, calculate distance along loop.
+            // way for this journey. Loop routes wrap along the loop; linear routes cannot.
             if (bus.nextStopSeq > 0 && anchor.seq > 0) {
+                val isLoop = isLoopRoute(route.stops)
                 val totalStops = route.stops.size
-                if (totalStops > 0) {
+                if (isLoop && totalStops > 0) {
                     val stopsAhead = (anchor.seq - bus.nextStopSeq + totalStops) % totalStops
                     if (stopsAhead > (totalStops * 0.85).toInt()) continue
-                } else if (bus.nextStopSeq > anchor.seq) {
-                    continue
+                } else {
+                    if (bus.nextStopSeq > anchor.seq) continue
                 }
             }
 
@@ -807,6 +813,17 @@ object GtfsRepository {
     }
 
     /**
+     * True when the route forms a continuous loop (starts and terminates at the same station/area).
+     * Linear routes (point-to-point) have distant start and end terminals.
+     */
+    internal fun isLoopRoute(routeStops: List<GtfsStop>): Boolean {
+        if (routeStops.size < 2) return false
+        val first = routeStops.first()
+        val last = routeStops.last()
+        return haversineMeters(first.lat, first.lon, last.lat, last.lon) < 1000.0
+    }
+
+    /**
      * The direction the route travels through [stop], worked out from the
      * stops either side of it.
      *
@@ -819,15 +836,22 @@ object GtfsRepository {
      * are too close together to give a meaningful direction.
      */
     internal fun stopServiceHeading(stop: GtfsStop, routeStops: List<GtfsStop>): Double? {
-        if (routeStops.size < 3) return null
+        if (routeStops.size < 2) return null
         val ordered = routeStops.sortedBy { it.seq }
         val idx = ordered.indexOfFirst { it.seq == stop.seq }
         if (idx < 0) return null
-        // Loop routes wrap: the stop before the first is the last one.
-        val prev = ordered[(idx - 1 + ordered.size) % ordered.size]
-        val next = ordered[(idx + 1) % ordered.size]
-        if (haversineMeters(prev.lat, prev.lon, next.lat, next.lon) < 50.0) return null
-        return bearingDegrees(prev.lat, prev.lon, next.lat, next.lon)
+        val isLoop = isLoopRoute(ordered)
+        val (fromStop, toStop) = when {
+            idx == 0 && !isLoop -> ordered[0] to ordered[1]
+            idx == ordered.size - 1 && !isLoop -> ordered[ordered.size - 2] to ordered[ordered.size - 1]
+            else -> {
+                val prev = ordered[(idx - 1 + ordered.size) % ordered.size]
+                val next = ordered[(idx + 1) % ordered.size]
+                prev to next
+            }
+        }
+        if (haversineMeters(fromStop.lat, fromStop.lon, toStop.lat, toStop.lon) < 50.0) return null
+        return bearingDegrees(fromStop.lat, fromStop.lon, toStop.lat, toStop.lon)
     }
 
     /**
@@ -858,17 +882,18 @@ object GtfsRepository {
 
         val metres = haversineMeters(bus.lat, bus.lon, stop.lat, stop.lon)
 
-        // 1. Strict sequence check: A bus on a loop cannot be "arriving" at a stop
-        // if it is still multiple stops behind on the route sequence!
+        // 1. Strict sequence check:
+        // A bus cannot be "arriving" at a stop if it is still multiple stops behind!
         if (bus.nextStopSeq > 0 && stop.seq > 0) {
             val totalStops = routeStops.size
-            val stopsAway = if (totalStops > 0) {
+            val isLoop = isLoopRoute(routeStops)
+            val stopsAway = if (isLoop && totalStops > 0) {
                 (stop.seq - bus.nextStopSeq + totalStops) % totalStops
             } else {
                 stop.seq - bus.nextStopSeq
             }
-            // Must be heading to this stop (0 stops away) or immediately approaching (1 stop away & close)
-            if (stopsAway > 1) return false
+            // On a linear route, if bus has passed stop (stopsAway < 0), it is not arriving.
+            if (stopsAway < 0 || stopsAway > 1) return false
             if (stopsAway == 1 && metres > 400.0) return false
         }
 
@@ -908,6 +933,7 @@ object GtfsRepository {
      * The two stages of an alarm are anchored on different stops, and the bus
      * that matters is the one heading for the later one. When the route's stop
      * sequence is unknown, fall back to the second argument.
+     * For circular routes, determines downstream direction along the loop.
      */
     fun laterStopOnRoute(routeCode: String, stopIdA: String, stopIdB: String): String {
         val code = baseRouteCode(normaliseRouteCode(routeCode))
@@ -915,7 +941,17 @@ object GtfsRepository {
         val seqA = route.stops.firstOrNull { it.id == stopIdA }?.seq ?: -1
         val seqB = route.stops.firstOrNull { it.id == stopIdB }?.seq ?: -1
         if (seqA < 0 || seqB < 0) return stopIdB
-        return if (seqB >= seqA) stopIdB else stopIdA
+        if (seqA == seqB) return stopIdB
+
+        val isLoop = isLoopRoute(route.stops)
+        val totalStops = route.stops.size
+        return if (isLoop && totalStops > 0) {
+            val distAtoB = (seqB - seqA + totalStops) % totalStops
+            val distBtoA = (seqA - seqB + totalStops) % totalStops
+            if (distAtoB <= distBtoA) stopIdB else stopIdA
+        } else {
+            if (seqB >= seqA) stopIdB else stopIdA
+        }
     }
 
     /** Every armed alarm on a route, newest state first. */
