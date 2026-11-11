@@ -1,6 +1,6 @@
 # Privacy Policy — CatchIt
 
-**Last updated: 9 November 2026**
+**Last updated: 12 November 2026**
 
 CatchIt is an Android app that tells you when your RapidKL MRT feeder bus is coming, and when to start walking to the stop.
 
@@ -74,8 +74,7 @@ Live bus data is provided by Prasarana RapidKL and the Government of Malaysia's 
 
 If this policy changes, the updated version will be published on the Play Store listing for CatchIt, and the "last updated" date above will change.
 
-## Contact
+## Contact & Inquiries
 
-Questions about this policy: **catchit.support@example.com**
-
-*(Replace this address with your real contact address before publishing.)*
+Questions, rights requests, or feedback regarding this policy:  
+**https://github.com/shintodd/CatchIt/issues**

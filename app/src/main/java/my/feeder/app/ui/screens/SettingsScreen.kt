@@ -24,10 +24,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.AppThemeMode
 import my.feeder.app.data.AppUpdateManager
 import my.feeder.app.data.DepartureAlarmStore
+import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.ThemeManager
 import my.feeder.app.data.UpdateStatus
 import my.feeder.app.ui.theme.*
@@ -50,6 +54,7 @@ fun SettingsScreen(
     val scheduleConfig by AlertScheduleManager.config.collectAsState()
     val scope = rememberCoroutineScope()
     var activeTimePickerTarget by remember { mutableStateOf<TimePickerTarget?>(null) }
+    var showResetDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -596,7 +601,74 @@ fun SettingsScreen(
                 }
             }
 
-            // 4. HONEST DATA NOTE — one line, low emphasis, no box.
+            // 4. PRIVACY, LEGAL & DATA CONTROL (Compliance & Right to Erasure)
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(Radius.lg),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Text(
+                        text = "Privacy & Legal",
+                        fontSize = TypeSize.headline,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = "CatchIt collects zero personal information, requires no account, and has no tracking or ad SDKs. All preferences stay on your device.",
+                        fontSize = TypeSize.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://github.com/shintodd/CatchIt/blob/main/PRIVACY_POLICY.md")
+                                )
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
+                            shape = RoundedCornerShape(Radius.md)
+                        ) {
+                            Text("Privacy Policy", fontSize = TypeSize.caption, fontWeight = FontWeight.Medium)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://github.com/shintodd/CatchIt/blob/main/TERMS_OF_SERVICE.md")
+                                )
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
+                            shape = RoundedCornerShape(Radius.md)
+                        ) {
+                            Text("Terms of Service", fontSize = TypeSize.caption, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+
+                    OutlinedButton(
+                        onClick = { showResetDialog = true },
+                        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
+                        shape = RoundedCornerShape(Radius.md),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TelemetryStaleLight)
+                    ) {
+                        Text("Reset & Erase All Local Data", fontSize = TypeSize.caption, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+
+            // 5. HONEST DATA NOTE — one line, low emphasis, no box.
             Text(
                 text = "Bus positions: Prasarana AVL. Routes and stops: data.gov.my " +
                     "(Open Government Licence). v${BuildConfig.VERSION_NAME}",
@@ -607,6 +679,30 @@ fun SettingsScreen(
             )
         }
     }
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Erase All Data?", fontWeight = FontWeight.Bold) },
+            text = { Text("This will remove all pinned routes, disarm all alarms, and clear saved commute preferences from your device.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        GtfsRepository.clearAllLocalData(context)
+                        Toast.makeText(context, "All local data erased", Toast.LENGTH_SHORT).show()
+                        showResetDialog = false
+                    }
+                ) {
+                    Text("Erase", color = TelemetryStaleLight, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     activeTimePickerTarget?.let { target ->

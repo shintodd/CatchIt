@@ -245,6 +245,18 @@ object GtfsRepository {
     fun isPinned(routeCode: String): Boolean =
         _pinnedRoutes.value.contains(routeCode.trim().uppercase())
 
+    /** Wipes all locally stored preferences, pins, and alarms (Compliance: Right to Erasure). */
+    fun clearAllLocalData(context: Context) {
+        DepartureAlarmWorker.cancel(context)
+        _activeAlerts.value = emptyMap()
+        _pinnedRoutes.value = emptyList()
+        pinPrefs?.edit()?.clear()?.apply()
+        context.getSharedPreferences("feeder_pins", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("departure_alarms", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("commute_schedule_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("service_alerts", Context.MODE_PRIVATE).edit().clear().apply()
+    }
+
     private var lastFetchEpochSeconds = 0L
 
     /**

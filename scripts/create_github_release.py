@@ -16,22 +16,21 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.5 🚌\n\n"
+        "## CatchIt v1.2.6 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.5\n"
-        "- **All-Routes Alarm Compatibility**: Audited and expanded departure alarm engine across all 91 MRT feeder routes (T100–T852), trunk routes, and nationwide services.\n"
-        "- **Topology-Aware Route Evaluation**: Automatically distinguishes circular loop routes from linear (point-to-point) routes (e.g. T155 Pinewood Court to MRT Sungai Buloh). Linear routes strictly veto vehicles past the stop without false modulo wraparound.\n"
-        "- **Loop Terminal Wraparound**: Correctly handles alarms anchored across the loop terminus (e.g. penultimate stop to post-terminal MRT station).\n"
-        "- **Stop Service Headings on Route Termini**: Accurately calculates directional headings on end-of-line stops without projecting 15 km cross-country.\n"
-        "- **Canonical Route Code Normalization**: Case-insensitive and direction-suffix invariant arming and status querying.\n"
-        "- **Expanded Test Suite**: 120/120 unit tests verified.\n\n"
+        "### What's New in v1.2.6\n"
+        "- **Legal & Privacy Compliance**: Full audit against the 20-Point AI App Legal Compliance Checklist.\n"
+        "- **Privacy & Terms Integration**: Integrated dedicated in-app links to `PRIVACY_POLICY.md` and `TERMS_OF_SERVICE.md` inside Settings.\n"
+        "- **Self-Serve Data Erasure (GDPR Art. 17)**: Added 1-click 'Reset & Erase All Local Data' feature in Settings that clears all local storage, alarms, and preferences.\n"
+        "- **Zero Tracking & Data Minimization**: Verified zero user PII collection, zero tracker/analytics SDKs, zero ads.\n"
+        "- **120/120 Unit Tests Passing**.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.5.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.6.apk` below and install directly on your Android phone."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.5',
-        'name': 'CatchIt v1.2.5',
+        'tag_name': 'v1.2.6',
+        'name': 'CatchIt v1.2.6',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -60,7 +59,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.5.apk',
+                f'{upload_url}?name=CatchIt-v1.2.6.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',
