@@ -858,11 +858,26 @@ object GtfsRepository {
 
         val metres = haversineMeters(bus.lat, bus.lon, stop.lat, stop.lon)
 
+        // 1. Strict sequence check: A bus on a loop cannot be "arriving" at a stop
+        // if it is still multiple stops behind on the route sequence!
+        if (bus.nextStopSeq > 0 && stop.seq > 0) {
+            val totalStops = routeStops.size
+            val stopsAway = if (totalStops > 0) {
+                (stop.seq - bus.nextStopSeq + totalStops) % totalStops
+            } else {
+                stop.seq - bus.nextStopSeq
+            }
+            // Must be heading to this stop (0 stops away) or immediately approaching (1 stop away & close)
+            if (stopsAway > 1) return false
+            if (stopsAway == 1 && metres > 400.0) return false
+        }
+
+        // 2. Physical distance ceiling: A bus more than 450m away in straight line can NEVER be arriving now.
+        // Prevents cross-town false triggers on winding feeder loops.
+        if (metres > APPROACH_RADIUS_M + 50.0) return false
+
         if (bus.speedKmh >= 5) {
-            // Moving. The direction has to agree, and it has to be checked
-            // BEFORE the distance, because on a dual carriageway the stop on
-            // the far side is inside the at-the-bay radius but the bus is
-            // heading the other way.
+            // Moving. The direction has to agree with the road service heading.
             val serviceHeading = stopServiceHeading(stop, routeStops)
             if (serviceHeading != null &&
                 angleDelta(bus.heading, serviceHeading) > OPPOSITE_LANE_DEG
@@ -871,8 +886,7 @@ object GtfsRepository {
             val toStop = bearingDegrees(bus.lat, bus.lon, stop.lat, stop.lon)
             if (angleDelta(bus.heading, toStop) > APPROACH_CONE_DEG) return false
 
-            return estimateEtaMinutes(bus.lat, bus.lon, stop.lat, stop.lon, bus.speedKmh) <=
-                ARRIVING_ETA_MINUTES
+            return metres <= APPROACH_RADIUS_M
         }
 
         // Stopped. Only count it as arriving when it is actually at the bay:

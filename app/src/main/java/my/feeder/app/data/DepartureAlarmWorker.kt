@@ -78,12 +78,15 @@ class DepartureAlarmWorker(
         private const val UNIQUE_NAME = "catchit_departure_alarm_check"
 
         /** How often the alarm is checked while the app is closed. */
-        private const val INTERVAL_SECONDS = 60L
+        private const val INTERVAL_SECONDS = 45L
 
         /** Starts (or restarts) the alarm check loop. Safe to call repeatedly. */
         fun schedule(context: Context) {
+            // Wake device immediately with AlarmManager to bypass JobScheduler Doze latency
+            DepartureAlarmScheduler.schedule(context, delayMs = 0L)
+
             val request = OneTimeWorkRequestBuilder<DepartureAlarmWorker>()
-                .setInitialDelay(INTERVAL_SECONDS, TimeUnit.SECONDS)
+                .setInitialDelay(0, TimeUnit.SECONDS)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -100,10 +103,13 @@ class DepartureAlarmWorker(
 
         /** Stops the alarm check loop. */
         fun cancel(context: Context) {
+            DepartureAlarmScheduler.cancel(context)
             WorkManager.getInstance(context.applicationContext).cancelUniqueWork(UNIQUE_NAME)
         }
 
         private fun scheduleNext(context: Context) {
+            DepartureAlarmScheduler.scheduleNext(context)
+
             val request = OneTimeWorkRequestBuilder<DepartureAlarmWorker>()
                 .setInitialDelay(INTERVAL_SECONDS, TimeUnit.SECONDS)
                 .setConstraints(

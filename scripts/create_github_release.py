@@ -16,22 +16,21 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.3 🚌\n\n"
+        "## CatchIt v1.2.4 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.3\n"
-        "- **Shopify/iOS Tumbler Wheel UI Overhaul**: Refined both Dark Mode (deep graphite card `#161817`) and Light Mode (pure crisp white `#FFFFFF`). Center highlight bar now features a subtle translucent pill with zero harsh borders.\n"
-        "- **Simplified Alarm Sheet UI**: Removed redundant walls of text and repetitive lists. Transformed into clean, scannable cards highlighting the active commute schedule (`17:10 – 19:10 · Mon–Fri`).\n"
-        "- **No Box-in-Box Nesting**: Stage cards redesigned as unified, high-contrast journey rows.\n"
-        "- **Concise Settings Explainer**: Replaced verbose paragraphs with quick 2-stage visual summaries.\n"
-        "- **Battery Guard**: Clear status indicators showing when background monitoring sleeps.\n"
-        "- **Lightweight (2.8 MB)**: Jetpack Compose + R8 minification.\n\n"
+        "### What's Fixed in v1.2.4\n"
+        "- **Eliminated False Arrival Triggers**: Fixed bug where buses on circular loop routes triggered premature 'bus reached stop' alerts from 14 stops away across town (e.g. at Coplace 13 while commuter was at Bomba Cyberjaya). Added strict sequence distance checks and 400m physical approach ceiling.\n"
+        "- **Zero-Delay Background Notifications**: Switched background alert polling from OS-throttled WorkManager (5-15 min Doze delays) to high-precision Android `AlarmManager` wakeups (`setExactAndAllowWhileIdle`). Notifications arrive in real time under lock screen / pocket Doze mode.\n"
+        "- **Persistent Multi-Bus Notifications**: Fixed alarm auto-pruning bug so alarms stay active across your entire commute window instead of dying after a single trigger.\n"
+        "- **Automatic Stale Stage Recovery**: If a bus is missed or skips a stop, the alarm system automatically resets after 20 minutes to monitor the next approaching bus.\n"
+        "- **Shopify/iOS Tumbler Wheel & Clean UI**: Polished dark/light mode time picker and scannable commute schedule sheets.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.3.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.4.apk` below and install directly on your Android phone."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.3',
-        'name': 'CatchIt v1.2.3',
+        'tag_name': 'v1.2.4',
+        'name': 'CatchIt v1.2.4',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -60,7 +59,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.3.apk',
+                f'{upload_url}?name=CatchIt-v1.2.4.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',

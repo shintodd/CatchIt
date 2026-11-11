@@ -215,6 +215,55 @@ class GhostArrivalTest {
     }
 
     // ---------------------------------------------------------------------
+    // Test 6 - Loop route cross-town false triggers (Cyberjaya Bomba vs Coplace 13)
+    // On a winding loop route, a bus 14 stops away can be within 1.4 km straight-line
+    // distance and heading south, but must NEVER trigger arrival.
+    // ---------------------------------------------------------------------
+    @Test
+    fun `bus 14 stops away on loop route is not arriving despite close straight line distance`() {
+        val loopStops = (1..31).map { seq ->
+            GtfsStop(
+                id = "SP$seq",
+                code = "SP$seq",
+                name = if (seq == 3) "COPLACE 13" else if (seq == 17) "BOMBA CYBERJAYA" else "STOP $seq",
+                lat = 2.92000 + (seq * 0.001),
+                lon = 101.65000 + (if (seq % 2 == 0) 0.002 else 0.0),
+                seq = seq
+            )
+        }
+        val stopCoplace = loopStops[2] // seq 3
+        val stopBomba = loopStops[16]  // seq 17
+
+        // Bus VH2687 is at Coplace 13 (seq 3), moving 34 km/h, heading 161 degrees.
+        val busAtCoplace = bus(
+            lat = stopCoplace.lat,
+            lon = stopCoplace.lon,
+            heading = 161f,
+            speedKmh = 34,
+            nextStopSeq = 3
+        )
+
+        // Must NOT trigger arrival for Bomba Cyberjaya (seq 17)
+        assertFalse(
+            "bus at stop 3 must not be arriving at stop 17 (14 stops away)",
+            GtfsRepository.isArrivingAtStop(busAtCoplace, stopBomba, loopStops)
+        )
+
+        // Even if straight-line distance was small (e.g. 300m), stopsAway > 1 must veto it
+        val closeStraightLineBus = bus(
+            lat = stopBomba.lat + 0.002, // ~220m away
+            lon = stopBomba.lon,
+            heading = 180f,
+            speedKmh = 30,
+            nextStopSeq = 3 // Still at seq 3!
+        )
+        assertFalse(
+            "bus with nextStopSeq=3 must not trigger stop 17 even if geographically near due to loop",
+            GtfsRepository.isArrivingAtStop(closeStraightLineBus, stopBomba, loopStops)
+        )
+    }
+
+    // ---------------------------------------------------------------------
     // The road-winding factor
     // ---------------------------------------------------------------------
     @Test
