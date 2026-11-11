@@ -4,11 +4,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -136,34 +138,22 @@ fun TwoStageAlertSheet(
             }
         }
 
-        Spacer(modifier = Modifier.height(Spacing.md))
+        Spacer(modifier = Modifier.height(Spacing.sm))
 
-        Text(
-            text = "Pick two stops on this route. I'll warn you when the bus reaches each one.",
-            fontSize = TypeSize.body,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(Spacing.md))
-
-        // ---- Stage 1 ----
+        // ---- Stage 1: Early Warning ----
         AlarmStageCard(
-            title = "Leave now",
-            subtitle = "Leave when the bus reaches this stop",
+            title = "1. Early warning",
+            subtitle = "Leave home/office when bus arrives here",
             stop = stage1Stop,
             onPickStop = { pickingFor = 1 }
         )
 
-        Spacer(modifier = Modifier.height(Spacing.md))
+        Spacer(modifier = Modifier.height(Spacing.sm))
 
-        // ---- Stage 2 ----
+        // ---- Stage 2: Boarding Stop ----
         AlarmStageCard(
-            title = if (sameStop) "Be at the curb" else "Go to your waiting spot",
-            subtitle = if (sameStop) {
-                "Be here when the bus reaches this stop"
-            } else {
-                "Go to your waiting spot when the bus reaches this stop"
-            },
+            title = "2. Boarding stop",
+            subtitle = "Where you wait & board the bus",
             stop = stage2Stop,
             onPickStop = { pickingFor = 2 }
         )
@@ -172,99 +162,57 @@ fun TwoStageAlertSheet(
 
         val scheduleConfig by AlertScheduleManager.config.collectAsState()
 
-        // Plain-language summary of what will happen.
+        // Highlighted Commute Schedule Badge (Clean & Concise)
         Surface(
-            shape = RoundedCornerShape(Radius.md),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(Spacing.md)) {
-                Text(
-                    text = "What you'll get",
-                    fontSize = TypeSize.body,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LucideIcon(
+                    drawableId = R.drawable.ic_lucide_clock,
+                    contentDescription = "Schedule",
+                    size = 18.dp,
+                    tint = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(Spacing.xs))
-                Text(
-                    text = buildString {
-                        append("1. ")
-                        append(stage1Stop?.name ?: "a stop")
-                        append(" — I'll warn you when the bus reaches it")
-                        append("\n2. ")
-                        append(stage2Stop?.name ?: "a stop")
-                        append(" — I'll warn you when the bus reaches it")
-                        append("\n3. Active schedule — ")
-                        if (scheduleConfig.enabled) {
-                            append("${scheduleConfig.startTimeFormatted} – ${scheduleConfig.endTimeFormatted} (${if (scheduleConfig.weekdaysOnly) "Mon–Fri" else "Daily"}) · customizable in Settings")
-                        } else {
-                            append("Always active (24/7) · customizable in Settings")
-                        }
-                    },
-                    fontSize = TypeSize.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(Spacing.md))
-
-        // Commute Schedule Window card
-        Surface(
-            shape = RoundedCornerShape(Radius.md),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(Spacing.md)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    LucideIcon(
-                        drawableId = R.drawable.ic_lucide_clock,
-                        contentDescription = "Schedule",
-                        size = 18.dp,
-                        tint = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(Spacing.sm))
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Commute window",
-                        fontSize = TypeSize.body,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Surface(
-                        shape = RoundedCornerShape(Radius.pill),
-                        color = if (scheduleConfig.enabled) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        text = if (scheduleConfig.enabled) {
+                            "${scheduleConfig.startTimeFormatted} – ${scheduleConfig.endTimeFormatted} (${if (scheduleConfig.weekdaysOnly) "Mon–Fri" else "Daily"})"
                         } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    ) {
-                        Text(
-                            text = if (scheduleConfig.enabled) "Active" else "24/7",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
+                            "24/7 Monitoring"
+                        },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        style = TabularNums
+                    )
+                    Text(
+                        text = if (scheduleConfig.enabled) "Active commute hours · Sleeps to save battery" else "Alerts run 24/7 · Customize in Settings",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(Spacing.xs))
-
-                Text(
-                    text = if (scheduleConfig.enabled) {
-                        "Alarms trigger during your commute hours: ${scheduleConfig.startTimeFormatted} – ${scheduleConfig.endTimeFormatted} (${if (scheduleConfig.weekdaysOnly) "Mon–Fri" else "Every day"}). Sleeps outside this time to save battery.\n\nCustomize commute hours anytime in Settings."
+                Surface(
+                    shape = RoundedCornerShape(Radius.pill),
+                    color = if (scheduleConfig.enabled) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     } else {
-                        "Schedule is off: alarms monitor 24/7. You can set custom commute hours in Settings to save battery."
-                    },
-                    fontSize = TypeSize.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 17.sp
-                )
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
+                ) {
+                    Text(
+                        text = if (scheduleConfig.enabled) "Active" else "24/7",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
 
@@ -383,8 +331,7 @@ fun TwoStageAlertSheet(
 }
 
 /**
- * One stage of the alarm: which stop triggers it, and how many minutes ahead
- * of the bus arriving there it should fire.
+ * One stage of the alarm: clean, unified card with zero box-in-box nesting.
  */
 @Composable
 private fun AlarmStageCard(
@@ -394,78 +341,72 @@ private fun AlarmStageCard(
     onPickStop: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(Radius.lg),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPickStop)
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        fontSize = TypeSize.title,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = subtitle,
-                        fontSize = TypeSize.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.sm))
-
-            // The stop this stage is anchored to.
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Surface(
-                shape = RoundedCornerShape(Radius.sm),
-                color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = 52.dp)
-                    .clickable(onClick = onPickStop)
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                modifier = Modifier.size(36.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     LucideIcon(
                         drawableId = R.drawable.ic_lucide_map_pin,
                         contentDescription = null,
                         size = 18.dp,
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.width(Spacing.sm))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stop?.name ?: "Choose a stop",
-                            fontSize = TypeSize.body,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (stop != null && stop.code.isNotBlank()) {
-                            Text(
-                                text = "Stop ${stop.code}",
-                                fontSize = TypeSize.caption,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    LucideIcon(
-                        drawableId = R.drawable.ic_lucide_chevron_down,
-                        contentDescription = "Change stop",
-                        size = 18.dp,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "· $subtitle",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stop?.name ?: "Tap to choose a stop",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (stop != null && stop.code.isNotBlank()) {
+                    Text(
+                        text = "Stop ${stop.code}",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
+            LucideIcon(
+                drawableId = R.drawable.ic_lucide_chevron_down,
+                contentDescription = "Change stop",
+                size = 18.dp,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

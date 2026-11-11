@@ -171,4 +171,6 @@ class ScreenshotBaselineTest {
     @Config(qualifiers = "w360dp-h800dp") @Test fun stationpicker_p9_dark() = capture("stationpicker_p9_dark", fontScale = 1.3f, dark = true) { stationPicker() }
     @Config(qualifiers = "w360dp-h800dp") @Test fun timepicker_p9_dark() = capture("timepicker_p9_dark", dark = true) { timePicker() }
     @Config(qualifiers = "w360dp-h800dp") @Test fun alarm_sheet_dark() = capture("alarm_sheet_dark", dark = true) { alarmSheet() }
+    @Config(qualifiers = "w360dp-h800dp") @Test fun timepicker_light() = capture("timepicker_light", dark = false) { timePicker() }
+    @Config(qualifiers = "w360dp-h800dp") @Test fun alarm_sheet_light() = capture("alarm_sheet_light", dark = false) { alarmSheet() }
 }

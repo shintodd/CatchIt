@@ -76,40 +76,44 @@ fun SettingsScreen(
                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            // 1. HOW ALARMS WORK
-            // There is nothing to configure: the rider picks two stops and the
-            // app warns them when the bus reaches each one. So this is an
-            // explainer, not a set of knobs.
+            // 1. HOW ALARMS WORK (Clean & concise)
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(Radius.lg),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(Spacing.lg)) {
-                    Text(
-                        text = "How alarms work",
-                        fontSize = TypeSize.title,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Text(
-                        text = "Open a route and tap Set up my alarm. Pick two stops on " +
-                            "that route \u2014 the first one you want to be warned about, " +
-                            "and the one where you actually wait.",
-                        fontSize = TypeSize.body,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Text(
-                        text = "CatchIt warns you when the bus reaches the first stop, then " +
-                            "again when it reaches the second. Both warnings are about the " +
-                            "same bus.",
-                        fontSize = TypeSize.body,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
-                    )
+                Row(
+                    modifier = Modifier.padding(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            LucideIcon(
+                                drawableId = R.drawable.ic_lucide_bell,
+                                contentDescription = null,
+                                size = 18.dp,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(Spacing.md))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "2-Stage Bus Alerts",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "1. Early alert when bus nears · 2. Alert at boarding stop.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

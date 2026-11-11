@@ -114,7 +114,7 @@ fun AlertsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // === COMMUTE SCHEDULE STATUS ===
+            // === COMMUTE SCHEDULE STATUS (Clean & Concise) ===
             item {
                 val scheduleConfig by AlertScheduleManager.config.collectAsState()
                 val isWithinWindow = remember(scheduleConfig) {
@@ -125,69 +125,47 @@ fun AlertsScreen(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(Radius.md),
+                    shape = RoundedCornerShape(12.dp),
                     color = if (!scheduleConfig.enabled) {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     } else if (isWithinWindow) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                     } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            LucideIcon(
-                                drawableId = R.drawable.ic_lucide_clock,
-                                contentDescription = "Alert schedule",
-                                size = 16.dp,
-                                tint = if (scheduleConfig.enabled && isWithinWindow) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(Spacing.sm))
-                            Text(
-                                text = summary,
-                                fontSize = TypeSize.caption,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (scheduleConfig.enabled && isWithinWindow) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Surface(
-                                shape = RoundedCornerShape(Radius.pill),
-                                color = if (scheduleConfig.enabled && isWithinWindow) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            ) {
-                                Text(
-                                    text = "Customizable",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (scheduleConfig.enabled && isWithinWindow) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LucideIcon(
+                            drawableId = R.drawable.ic_lucide_clock,
+                            contentDescription = "Alert schedule",
+                            size = 16.dp,
+                            tint = if (scheduleConfig.enabled && isWithinWindow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Set your own start & end commute hours anytime in Settings.",
+                            text = summary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scheduleConfig.enabled && isWithinWindow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "Settings ❯",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

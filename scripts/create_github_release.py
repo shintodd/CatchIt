@@ -16,22 +16,22 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.2 🚌\n\n"
+        "## CatchIt v1.2.3 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.2\n"
-        "- **Shopify/iOS Tumbler Wheel Time Picker**: Smooth vertical rolling tumbler columns for Hour (`01..12`), Minute (`00..59`), and `AM / PM` with physics snap fling, center translucent highlight pill, and edge fade gradient.\n"
-        "- **Live 12h & 24h MYT Header**: Real-time display showing both 12-hour and 24-hour Malaysian Standard Time (`05:10 PM · (17:10 MYT)`).\n"
-        "- **Commuter Preset Chips**: 1-tap presets for morning and evening peak feeder schedules (`07:15 AM`, `08:00 AM`, `05:10 PM`, `06:30 PM`, `07:10 PM`, `09:30 PM`).\n"
-        "- **Alarm Screen Customizability Indicators**: `DepartureAlarmSheet` and `AlertsScreen` now feature dedicated commute schedule cards and 'Customizable' status pills showing active hours and directing users to Settings.\n"
-        "- **Battery Guard**: Alarms and background workers sleep outside commute hours to save battery.\n"
+        "### What's New in v1.2.3\n"
+        "- **Shopify/iOS Tumbler Wheel UI Overhaul**: Refined both Dark Mode (deep graphite card `#161817`) and Light Mode (pure crisp white `#FFFFFF`). Center highlight bar now features a subtle translucent pill with zero harsh borders.\n"
+        "- **Simplified Alarm Sheet UI**: Removed redundant walls of text and repetitive lists. Transformed into clean, scannable cards highlighting the active commute schedule (`17:10 – 19:10 · Mon–Fri`).\n"
+        "- **No Box-in-Box Nesting**: Stage cards redesigned as unified, high-contrast journey rows.\n"
+        "- **Concise Settings Explainer**: Replaced verbose paragraphs with quick 2-stage visual summaries.\n"
+        "- **Battery Guard**: Clear status indicators showing when background monitoring sleeps.\n"
         "- **Lightweight (2.8 MB)**: Jetpack Compose + R8 minification.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.2.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.3.apk` below and install directly on your Android phone."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.2',
-        'name': 'CatchIt v1.2.2',
+        'tag_name': 'v1.2.3',
+        'name': 'CatchIt v1.2.3',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -60,7 +60,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.2.apk',
+                f'{upload_url}?name=CatchIt-v1.2.3.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',
