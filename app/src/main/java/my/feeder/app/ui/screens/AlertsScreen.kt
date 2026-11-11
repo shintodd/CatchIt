@@ -135,31 +135,59 @@ fun AlertsScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        LucideIcon(
-                            drawableId = R.drawable.ic_lucide_clock,
-                            contentDescription = "Alert schedule",
-                            size = 16.dp,
-                            tint = if (scheduleConfig.enabled && isWithinWindow) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            LucideIcon(
+                                drawableId = R.drawable.ic_lucide_clock,
+                                contentDescription = "Alert schedule",
+                                size = 16.dp,
+                                tint = if (scheduleConfig.enabled && isWithinWindow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Text(
+                                text = summary,
+                                fontSize = TypeSize.caption,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (scheduleConfig.enabled && isWithinWindow) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(Radius.pill),
+                                color = if (scheduleConfig.enabled && isWithinWindow) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            ) {
+                                Text(
+                                    text = "Customizable",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (scheduleConfig.enabled && isWithinWindow) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
-                        )
-                        Spacer(modifier = Modifier.width(Spacing.sm))
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = summary,
-                            fontSize = TypeSize.caption,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (scheduleConfig.enabled && isWithinWindow) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.weight(1f)
+                            text = "Set your own start & end commute hours anytime in Settings.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
                     }
                 }

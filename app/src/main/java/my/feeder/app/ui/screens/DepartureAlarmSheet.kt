@@ -21,7 +21,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import my.feeder.app.R
+import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.DepartureAlarmStore
 import my.feeder.app.data.DepartureAlarmWorker
 import my.feeder.app.data.DepartureAlert
@@ -168,6 +170,8 @@ fun TwoStageAlertSheet(
 
         Spacer(modifier = Modifier.height(Spacing.md))
 
+        val scheduleConfig by AlertScheduleManager.config.collectAsState()
+
         // Plain-language summary of what will happen.
         Surface(
             shape = RoundedCornerShape(Radius.md),
@@ -190,9 +194,76 @@ fun TwoStageAlertSheet(
                         append("\n2. ")
                         append(stage2Stop?.name ?: "a stop")
                         append(" — I'll warn you when the bus reaches it")
+                        append("\n3. Active schedule — ")
+                        if (scheduleConfig.enabled) {
+                            append("${scheduleConfig.startTimeFormatted} – ${scheduleConfig.endTimeFormatted} (${if (scheduleConfig.weekdaysOnly) "Mon–Fri" else "Daily"}) · customizable in Settings")
+                        } else {
+                            append("Always active (24/7) · customizable in Settings")
+                        }
                     },
                     fontSize = TypeSize.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.md))
+
+        // Commute Schedule Window card
+        Surface(
+            shape = RoundedCornerShape(Radius.md),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(Spacing.md)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LucideIcon(
+                        drawableId = R.drawable.ic_lucide_clock,
+                        contentDescription = "Schedule",
+                        size = 18.dp,
+                        tint = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(
+                        text = "Commute window",
+                        fontSize = TypeSize.body,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        shape = RoundedCornerShape(Radius.pill),
+                        color = if (scheduleConfig.enabled) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ) {
+                        Text(
+                            text = if (scheduleConfig.enabled) "Active" else "24/7",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(Spacing.xs))
+
+                Text(
+                    text = if (scheduleConfig.enabled) {
+                        "Alarms trigger during your commute hours: ${scheduleConfig.startTimeFormatted} – ${scheduleConfig.endTimeFormatted} (${if (scheduleConfig.weekdaysOnly) "Mon–Fri" else "Every day"}). Sleeps outside this time to save battery.\n\nCustomize commute hours anytime in Settings."
+                    } else {
+                        "Schedule is off: alarms monitor 24/7. You can set custom commute hours in Settings to save battery."
+                    },
+                    fontSize = TypeSize.caption,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
                 )
             }
         }

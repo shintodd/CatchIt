@@ -1,53 +1,57 @@
 package my.feeder.app.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.launch
 import my.feeder.app.R
 import my.feeder.app.ui.theme.*
 
-/** Preset commuter hours for fast 1-tap selection */
 private data class CommutePreset(
     val label: String,
-    val hour: Int,
+    val hour24: Int,
     val minute: Int
 )
 
 private val COMMUTE_PRESETS = listOf(
-    CommutePreset("07:15 Morning Peak", 7, 15),
-    CommutePreset("08:00 Work Shift", 8, 0),
-    CommutePreset("17:10 Reference Commute", 17, 10),
-    CommutePreset("18:30 Evening Peak", 18, 30),
-    CommutePreset("19:10 CatchIt Default", 19, 10),
-    CommutePreset("21:30 Late Feeder", 21, 30)
+    CommutePreset("07:15 AM Peak", 7, 15),
+    CommutePreset("08:00 AM Shift", 8, 0),
+    CommutePreset("05:10 PM Commute", 17, 10),
+    CommutePreset("06:30 PM Peak", 18, 30),
+    CommutePreset("07:10 PM Default", 19, 10),
+    CommutePreset("09:30 PM Late", 21, 30)
 )
 
 /**
- * High-craft time picker dialog matching CatchIt's deep OLED theme and transit aesthetics.
+ * Shopify / iOS style tumbler wheel time picker tailored to CatchIt.
  *
- * Replaces the archaic Android View TimePickerDialog with a native Material 3 Compose
- * picker styled in CatchIt emerald green, featuring quick commuter presets, 24-hour
- * clock face, digital keyboard mode toggle, and responsive dark canvas.
+ * Provides three smooth vertical rolling columns:
+ *   [ Hours 01..12 ]  [ Minutes 00..59 ]  [ AM / PM ]
+ * with a highlighted center selection bar, edge fade gradient overlays,
+ * quick commuter presets, and live 24-hour preview.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatchItTimePickerDialog(
     title: String,
@@ -70,7 +74,6 @@ fun CatchItTimePickerDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatchItTimePickerContent(
     title: String,
@@ -80,12 +83,28 @@ fun CatchItTimePickerContent(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isKeyboardMode by remember { mutableStateOf(false) }
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = true
-    )
+    // 12-hour decomposition
+    val initial12 = if (initialHour % 12 == 0) 12 else initialHour % 12
+    val initialIsPm = initialHour >= 12
+
+    var selectedHourIndex by remember { mutableStateOf((initial12 - 1).coerceIn(0, 11)) }
+    var selectedMinuteIndex by remember { mutableStateOf(initialMinute.coerceIn(0, 59)) }
+    var selectedPeriodIndex by remember { mutableStateOf(if (initialIsPm) 1 else 0) } // 0 = AM, 1 = PM
+
+    val hoursList = remember { (1..12).map { String.format("%02d", it) } }
+    val minutesList = remember { (0..59).map { String.format("%02d", it) } }
+    val periodsList = remember { listOf("AM", "PM") }
+
+    // Live 24-hour calculation
+    val current12Hour = selectedHourIndex + 1
+    val isPm = selectedPeriodIndex == 1
+    val current24Hour = if (isPm) {
+        if (current12Hour == 12) 12 else current12Hour + 12
+    } else {
+        if (current12Hour == 12) 0 else current12Hour
+    }
+    val current24Formatted = String.format("%02d:%02d", current24Hour, selectedMinuteIndex)
+    val current12Formatted = String.format("%02d:%02d %s", current12Hour, selectedMinuteIndex, if (isPm) "PM" else "AM")
 
     Surface(
         modifier = modifier
@@ -93,194 +112,344 @@ fun CatchItTimePickerContent(
             .wrapContentHeight(),
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 6.dp,
+        tonalElevation = 8.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Top Header Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Surface(
+                    shape = RoundedCornerShape(Radius.sm),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(Radius.sm),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                LucideIcon(
-                                    drawableId = R.drawable.ic_lucide_clock,
-                                    contentDescription = null,
-                                    size = 18.dp,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(Spacing.sm))
-                        Column {
-                            Text(
-                                text = title,
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "24-hour commuter time",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // Keyboard vs Dial Toggle
-                    IconButton(
-                        onClick = { isKeyboardMode = !isKeyboardMode },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                shape = CircleShape
-                            )
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         LucideIcon(
-                            drawableId = if (isKeyboardMode) R.drawable.ic_lucide_clock else R.drawable.ic_lucide_keyboard,
-                            contentDescription = if (isKeyboardMode) "Switch to dial" else "Switch to keypad",
+                            drawableId = R.drawable.ic_lucide_clock,
+                            contentDescription = null,
                             size = 18.dp,
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(Spacing.md))
-
-                // Quick Commute Presets Carousel
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    COMMUTE_PRESETS.forEach { preset ->
-                        val isSelected = timePickerState.hour == preset.hour && timePickerState.minute == preset.minute
-                        Surface(
-                            shape = RoundedCornerShape(Radius.pill),
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            },
-                            border = if (isSelected) {
-                                BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                            } else null,
-                            modifier = Modifier.clickable {
-                                // Re-create or adjust time
-                                onConfirm(preset.hour, preset.minute)
-                            }
-                        ) {
-                            Text(
-                                text = preset.label,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$current12Formatted · ($current24Formatted MYT)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = TabularNums
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(Spacing.md))
+            Spacer(modifier = Modifier.height(Spacing.md))
 
-                // Material 3 Picker Styled with CatchIt Brand Colors
-                val pickerColors = TimePickerDefaults.colors(
-                    clockDialColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                    clockDialSelectedContentColor = Color.White,
-                    clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface,
-                    selectorColor = MaterialTheme.colorScheme.primary,
-                    containerColor = Color.Transparent,
-                    periodSelectorBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    periodSelectorUnselectedContainerColor = Color.Transparent,
-                    periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
-                    timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    timeSelectorSelectedContentColor = MaterialTheme.colorScheme.primary,
-                    timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            // Quick Presets Carousel
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                COMMUTE_PRESETS.forEach { preset ->
+                    val p12 = if (preset.hour24 % 12 == 0) 12 else preset.hour24 % 12
+                    val pIsPm = preset.hour24 >= 12
+                    val isSelected = current24Hour == preset.hour24 && selectedMinuteIndex == preset.minute
 
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isKeyboardMode) {
-                        TimeInput(
-                            state = timePickerState,
-                            colors = pickerColors
-                        )
-                    } else {
-                        TimePicker(
-                            state = timePickerState,
-                            colors = pickerColors
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(Spacing.md))
-
-                // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        shape = RoundedCornerShape(Radius.md),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .defaultMinSize(minHeight = 46.dp)
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = TypeSize.body
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            onConfirm(timePickerState.hour, timePickerState.minute)
+                    Surface(
+                        shape = RoundedCornerShape(Radius.pill),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         },
-                        shape = RoundedCornerShape(Radius.md),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .defaultMinSize(minHeight = 46.dp)
+                        border = if (isSelected) {
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                        } else null,
+                        modifier = Modifier.clickable {
+                            selectedHourIndex = p12 - 1
+                            selectedMinuteIndex = preset.minute
+                            selectedPeriodIndex = if (pIsPm) 1 else 0
+                        }
                     ) {
                         Text(
-                            text = "Set time",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = TypeSize.body
+                            text = preset.label,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            // Tumbler / Wheel Picker (Shopify / iOS Style)
+            val itemHeight = 44.dp
+            val visibleCount = 5
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight * visibleCount),
+                contentAlignment = Alignment.Center
+            ) {
+                // Highlight Bar in the center
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight)
+                        .padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                ) {}
+
+                // Rolling Columns
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Hours Column
+                    WheelColumn(
+                        items = hoursList,
+                        selectedIndex = selectedHourIndex,
+                        onIndexSelected = { selectedHourIndex = it },
+                        itemHeight = itemHeight,
+                        visibleCount = visibleCount,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Colon Divider
+                    Text(
+                        text = ":",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = TabularNums
+                    )
+
+                    // Minutes Column
+                    WheelColumn(
+                        items = minutesList,
+                        selectedIndex = selectedMinuteIndex,
+                        onIndexSelected = { selectedMinuteIndex = it },
+                        itemHeight = itemHeight,
+                        visibleCount = visibleCount,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // AM / PM Column
+                    WheelColumn(
+                        items = periodsList,
+                        selectedIndex = selectedPeriodIndex,
+                        onIndexSelected = { selectedPeriodIndex = it },
+                        itemHeight = itemHeight,
+                        visibleCount = visibleCount,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Top Fade Gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight * 1.3f)
+                        .align(Alignment.TopCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.surface,
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+
+                // Bottom Fade Gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight * 1.3f)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.surface
+                                )
+                            )
+                        )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.lg))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(Radius.md),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 46.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = TypeSize.body
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        onConfirm(current24Hour, selectedMinuteIndex)
+                    },
+                    shape = RoundedCornerShape(Radius.md),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 46.dp)
+                ) {
+                    Text(
+                        text = "Set time",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = TypeSize.body
+                    )
+                }
+            }
         }
+    }
+}
+
+/**
+ * A single wheel column that snaps items cleanly to the center position.
+ */
+@Composable
+private fun WheelColumn(
+    items: List<String>,
+    selectedIndex: Int,
+    onIndexSelected: (Int) -> Unit,
+    itemHeight: Dp,
+    visibleCount: Int,
+    modifier: Modifier = Modifier
+) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
+    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+    val density = LocalDensity.current
+    val itemHeightPx = with(density) { itemHeight.toPx() }
+    val scope = rememberCoroutineScope()
+
+    // Smooth animate when index changes programmatically (e.g. preset clicked)
+    LaunchedEffect(selectedIndex) {
+        val current = listState.firstVisibleItemIndex
+        if (current != selectedIndex && !listState.isScrollInProgress) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
+
+    // Detect center item when user finishes scroll gesture
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            val snappedIndex = (listState.firstVisibleItemIndex +
+                if (listState.firstVisibleItemScrollOffset > itemHeightPx / 2) 1 else 0)
+                .coerceIn(0, items.size - 1)
+            onIndexSelected(snappedIndex)
+        }
+    }
+
+    val currentCenterIndex by remember {
+        derivedStateOf {
+            (listState.firstVisibleItemIndex +
+                if (listState.firstVisibleItemScrollOffset > itemHeightPx / 2) 1 else 0)
+                .coerceIn(0, items.size - 1)
+        }
+    }
+
+    val halfVisible = visibleCount / 2
+
+    Box(
+        modifier = modifier.height(itemHeight * visibleCount),
+        contentAlignment = Alignment.Center
+    ) {
+        LazyColumn(
+            state = listState,
+            flingBehavior = flingBehavior,
+            contentPadding = PaddingValues(vertical = itemHeight * halfVisible),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(items.size) { index ->
+                val distance = Math.abs(index - currentCenterIndex)
+                val alpha = when (distance) {
+                    0 -> 1f
+                    1 -> 0.45f
+                    2 -> 0.2f
+                    else -> 0.08f
+                }
+                val scale = when (distance) {
+                    0 -> 1.15f
+                    1 -> 0.95f
+                    else -> 0.85f
+                }
+                val isSelected = distance == 0
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight)
+                        .clickable {
+                            scope.launch { listState.animateScrollToItem(index) }
+                            onIndexSelected(index)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = items[index],
+                        fontSize = if (isSelected) 22.sp else 18.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        style = TabularNums,
+                        modifier = Modifier.graphicsLayer {
+                            this.alpha = alpha
+                            this.scaleX = scale
+                            this.scaleY = scale
+                        }
+                    )
+                }
+            }
+        }
+    }
 }
