@@ -171,6 +171,70 @@ fun AlertsScreen(
                 }
             }
 
+            // === 1-TAP BACKGROUND AUTO-START / BATTERY BANNER ===
+            item {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                var isWhitelisted by remember { mutableStateOf(my.feeder.app.util.OemBatteryHelper.isIgnoringBatteryOptimizations(context)) }
+                if (!isWhitelisted) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                my.feeder.app.util.OemBatteryHelper.launchOneTapSetup(context)
+                                isWhitelisted = my.feeder.app.util.OemBatteryHelper.isIgnoringBatteryOptimizations(context)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            LucideIcon(
+                                drawableId = R.drawable.ic_lucide_zap,
+                                contentDescription = "Background auto-start",
+                                size = 20.dp,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Enable Background Auto-Start",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Tap to prevent phone from sleeping bus alarms",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    my.feeder.app.util.OemBatteryHelper.launchOneTapSetup(context)
+                                    isWhitelisted = my.feeder.app.util.OemBatteryHelper.isIgnoringBatteryOptimizations(context)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Text(
+                                    text = "Enable",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // === YOUR ALARMS (the app's core feature — first) ===
             if (alerts.isEmpty()) {
                 item { NoAlarmsHint() }

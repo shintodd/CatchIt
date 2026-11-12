@@ -63,20 +63,38 @@ fun RouteDetailScreen(
     val activeAlerts by GtfsRepository.activeAlerts.collectAsState()
 
     val route = remember(routes, routeCode) {
-        routes.find { it.code.equals(routeCode, ignoreCase = true) }
+        routes.find { it.code.equals(routeCode, ignoreCase = true) || it.id.equals(routeCode, ignoreCase = true) }
     }
+    val effectiveCode = route?.code ?: routeCode
 
-    val buses = remember(liveBuses, routeCode) { GtfsRepository.liveBusesFor(routeCode) }
-    val schedule = remember(schedules, routeCode) {
-        schedules[routeCode.trim().uppercase()] ?: emptyList()
+    val stops = route?.stops ?: emptyList()
+
+    val buses = remember(liveBuses, effectiveCode, my.feeder.app.NotificationNavigation.testBusEnabled, stops) {
+        if (my.feeder.app.NotificationNavigation.testBusEnabled && stops.isNotEmpty()) {
+            val targetStop = stops.find { it.name.contains("COPLACE", ignoreCase = true) } ?: stops[stops.size / 2]
+            listOf(
+                my.feeder.app.data.LiveBusState(
+                    plate = "VH2687",
+                    lat = targetStop.lat,
+                    lon = targetStop.lon,
+                    heading = 161f,
+                    speedKmh = 34,
+                    lastPingSeconds = 12,
+                    routeCode = effectiveCode
+                )
+            )
+        } else {
+            GtfsRepository.liveBusesFor(effectiveCode)
+        }
     }
-    val isPinned = remember(pinned, routeCode) { GtfsRepository.isPinned(routeCode) }
+    val schedule = remember(schedules, effectiveCode) {
+        schedules[effectiveCode.trim().uppercase()] ?: emptyList()
+    }
+    val isPinned = remember(pinned, effectiveCode) { GtfsRepository.isPinned(effectiveCode) }
 
     val nextBus = remember(buses) {
         buses.minByOrNull { if (it.etaMinutes < 0) Int.MAX_VALUE else it.etaMinutes }
     }
-
-    val stops = route?.stops ?: emptyList()
 
     // Per-stop ETAs from the live bus, keyed by sequence.
     val stopEtas = remember(route, buses) {
@@ -123,7 +141,7 @@ fun RouteDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = routeCode,
+                            text = effectiveCode,
                             fontSize = TypeSize.title,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
@@ -156,7 +174,7 @@ fun RouteDetailScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { GtfsRepository.togglePin(routeCode) },
+                        onClick = { GtfsRepository.togglePin(effectiveCode) },
                         modifier = Modifier
                             .size(48.dp)
                             .testTag("detail-star")
@@ -178,7 +196,7 @@ fun RouteDetailScreen(
         },
         sheetContent = {
             RouteStopsSheet(
-                routeCode = routeCode,
+                routeCode = effectiveCode,
                 stops = stops,
                 schedule = schedule,
                 stopEtas = stopEtas,
@@ -197,15 +215,15 @@ fun RouteDetailScreen(
             // === NEXT BUS STRIP ===
             NextBusStrip(
                 nextBus = nextBus,
-                routeCode = routeCode,
+                routeCode = effectiveCode,
                 liveCount = buses.size,
-                isArmed = activeAlerts.keys.any { it.startsWith("${routeCode}_") }
+                isArmed = activeAlerts.keys.any { it.startsWith("${effectiveCode}_") }
             )
 
             // === MAP (fills the rest) ===
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 FeederRealMap(
-                    routeCode = routeCode,
+                    routeCode = effectiveCode,
                     stops = stops,
                     shapePoints = route?.shape ?: emptyList(),
                     activeBuses = buses,

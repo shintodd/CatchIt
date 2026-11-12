@@ -100,39 +100,33 @@
       font-size: 8px;
     }
     .bus-puck {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #0F2A1D;
-      border: 2px solid #FFFFFF;
-      box-shadow: 0 0 12px rgba(74, 222, 128, 0.8);
-      display: grid;
-      place-items: center;
+      width: 44px;
+      height: 44px;
       position: relative;
       margin-top: 2px;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
     }
-    .bus-puck .arrow {
-      width: 0;
-      height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 9px solid #4ADE80;
-      transform-origin: center;
+    .bus-puck-svg {
+      width: 44px;
+      height: 44px;
+      overflow: visible;
     }
     .bus-pulse-ring {
       position: absolute;
-      top: -6px;
-      left: -6px;
-      width: 36px;
-      height: 36px;
+      top: 6px;
+      left: 6px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: 2px solid rgba(74, 222, 128, 0.6);
       animation: busPulse 1.8s infinite ease-out;
       pointer-events: none;
     }
     @keyframes busPulse {
-      0% { transform: scale(0.8); opacity: 1; }
-      100% { transform: scale(1.6); opacity: 0; }
+      0% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(1.7); opacity: 0; }
     }
 
     /* Stop Circle Marker */
@@ -179,7 +173,7 @@
   <!-- Route Info Header Tag -->
   <div class="route-badge-overlay" id="route-badge">
     <span class="dot"></span>
-    <span id="route-tag-text">T815 · Real GTFS Feed</span>
+    <span id="route-tag-text">Loading route...</span>
   </div>
 
   <!-- Map Controls -->
@@ -309,10 +303,13 @@
       if (!userMovedMap) fitRouteBounds();
     });
 
+    let hasExplicitRoute = false;
+
     // Public API called by Jetpack Compose WebView Bridge or Local Script
     window.setRouteData = function(data) {
       // data: { code: 'T815', headsign: '...', shape: [[lat, lon], ...], stops: [...] }
       if (!data) return;
+      hasExplicitRoute = true;
 
       document.getElementById('route-tag-text').textContent = `${data.code || 'Feeder'} · ${data.stops?.length || 0} Stops`;
 
@@ -384,7 +381,22 @@
             </div>
             <div class="bus-puck">
               <div class="bus-pulse-ring"></div>
-              <div class="arrow" style="transform: rotate(${heading}deg);"></div>
+              <svg class="bus-puck-svg" viewBox="0 0 44 44">
+                <!-- Rotating Heading Pointer & Ring -->
+                <g style="transform: rotate(${heading}deg); transform-origin: 22px 22px;">
+                  <!-- Aerodynamic Directional Arrowhead Beak -->
+                  <path d="M 22 1 L 29 13 L 22 10 L 15 13 Z" fill="#4ADE80" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+                  <!-- Main Vehicle Circular Body -->
+                  <circle cx="22" cy="22" r="14.5" fill="#0A2F1D" stroke="#FFFFFF" stroke-width="2.2"/>
+                  <circle cx="22" cy="22" r="12.5" fill="#007A3D"/>
+                </g>
+                <!-- Centered Bus Icon (Stays upright, high readability) -->
+                <g transform="translate(14, 14)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
+                  </svg>
+                </g>
+              </svg>
             </div>
           </div>
         `;
@@ -392,8 +404,8 @@
         const busIcon = L.divIcon({
           html: busHtml,
           className: '',
-          iconSize: [60, 48],
-          iconAnchor: [30, 36]
+          iconSize: [64, 60],
+          iconAnchor: [32, 40]
         });
 
         const busMarker = L.marker([b.lat, b.lon], { icon: busIcon, zIndexOffset: 1000 }).addTo(busesLayer);
@@ -411,43 +423,46 @@
       }
     };
 
-    // Auto-initialize with T815 route shape for standalone browser/preview.
-    // No demo bus: in the app this fetch() always fails (file:// blocks it), so a
-    // fallback vehicle here would flash fake telemetry before Kotlin pushes real data.
-    fetch('gtfs_feeder_catalog.json')
-      .then(r => r.json())
-      .then(catalog => {
-        const t815 = catalog.find(r => r.code === 'T815') || catalog[0];
-        if (t815) {
-          window.setRouteData(t815);
-        }
-      })
-      .catch(() => {
-        // Fallback demo coordinates if local file protocol restricts relative fetch
-        const demoShape = [
-          [3.1275, 101.6390],
-          [3.1290, 101.6415],
-          [3.1315, 101.6440],
-          [3.1330, 101.6465],
-          [3.1350, 101.6480],
-          [3.1325, 101.6510],
-          [3.1295, 101.6500],
-          [3.1260, 101.6450],
-          [3.1275, 101.6390]
-        ];
-        window.setRouteData({
-          code: 'T815',
-          headsign: 'Universiti Malaya ↺ Phileo',
-          shape: demoShape,
-          stops: [
-            { id: '1', name: 'MRT Phileo Damansara Pintu A (Bay 1)', seq: 1, code: 'Bay 1', lat: 3.1275, lon: 101.6390 },
-            { id: '2', name: 'Tiara Damansara (Utara)', seq: 2, code: 'PJ240', lat: 3.1315, lon: 101.6440 },
-            { id: '3', name: 'Pusat Asasi Sains UM', seq: 3, code: 'KL110', lat: 3.1350, lon: 101.6480 }
-          ]
+    // Auto-initialize with T815 route shape ONLY for standalone browser/preview.
+    // In the Android app, routes and stops are pushed directly by FeederRealMap via window.setRouteData.
+    if (!window.location.href.startsWith("file:///android_asset/")) {
+      fetch('gtfs_feeder_catalog.json')
+        .then(r => r.json())
+        .then(catalog => {
+          if (hasExplicitRoute) return;
+          const t815 = catalog.find(r => r.code === 'T815') || catalog[0];
+          if (t815) {
+            window.setRouteData(t815);
+          }
+        })
+        .catch(() => {
+          if (hasExplicitRoute) return;
+          // Fallback demo coordinates if local file protocol restricts relative fetch
+          const demoShape = [
+            [3.1275, 101.6390],
+            [3.1290, 101.6415],
+            [3.1315, 101.6440],
+            [3.1330, 101.6465],
+            [3.1350, 101.6480],
+            [3.1325, 101.6510],
+            [3.1295, 101.6500],
+            [3.1260, 101.6450],
+            [3.1275, 101.6390]
+          ];
+          window.setRouteData({
+            code: 'T815',
+            headsign: 'Universiti Malaya ↺ Phileo',
+            shape: demoShape,
+            stops: [
+              { id: '1', name: 'MRT Phileo Damansara Pintu A (Bay 1)', seq: 1, code: 'Bay 1', lat: 3.1275, lon: 101.6390 },
+              { id: '2', name: 'Tiara Damansara (Utara)', seq: 2, code: 'PJ240', lat: 3.1315, lon: 101.6440 },
+              { id: '3', name: 'Pusat Asasi Sains UM', seq: 3, code: 'KL110', lat: 3.1350, lon: 101.6480 }
+            ]
+          });
+          // No demo vehicle — wait for real GTFS-RT positions from the host app.
+          window.updateBuses([]);
         });
-        // No demo vehicle — wait for real GTFS-RT positions from the host app.
-        window.updateBuses([]);
-      });
+    }
   </script>
 </body>
 </html>

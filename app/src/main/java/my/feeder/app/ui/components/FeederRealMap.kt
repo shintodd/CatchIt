@@ -36,13 +36,17 @@ fun FeederRealMap(
     // it actually changes — recomposition alone must not rebuild the whole JSON.
     var lastPushSignature by remember { mutableStateOf("") }
 
-    fun pushDataToMap(webView: WebView) {
+    LaunchedEffect(routeCode) {
+        lastPushSignature = ""
+    }
+
+    fun pushDataToMap(webView: WebView, force: Boolean = false) {
         try {
             // Cheap fingerprint of the inputs. When the buses move, the count or
             // positions change; when they don't, we skip the whole serialization.
             val busSig = activeBuses.joinToString(",") { "${it.plate}:${it.lat}:${it.lon}:${it.speedKmh}" }
             val signature = "$routeCode|${stops.size}|${shapePoints.size}|$busSig"
-            if (signature == lastPushSignature) return
+            if (!force && signature == lastPushSignature) return
             lastPushSignature = signature
 
             val stopsJson = JSONArray()
@@ -82,9 +86,12 @@ fun FeederRealMap(
             }
 
             val jsCall = "if (window.setRouteData) { window.setRouteData($routeObj); window.updateBuses($busesJson); }"
-            webView.evaluateJavascript(jsCall, null)
+            android.util.Log.d("FeederRealMap", "Pushing data for $routeCode: stops=${stops.size}, shape=${shapePoints.size}, buses=${activeBuses.size}")
+            webView.evaluateJavascript(jsCall) { result ->
+                android.util.Log.d("FeederRealMap", "evaluateJavascript result for $routeCode: $result")
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("FeederRealMap", "Error pushing data to map", e)
         }
     }
 
@@ -130,11 +137,19 @@ fun FeederRealMap(
                         false
                     }
 
+                    webChromeClient = object : android.webkit.WebChromeClient() {
+                        override fun onConsoleMessage(message: android.webkit.ConsoleMessage?): Boolean {
+                            android.util.Log.d("FeederMapJS", "${message?.message()} -- line ${message?.lineNumber()}")
+                            return true
+                        }
+                    }
+
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             isMapLoaded = true
-                            view?.let { pushDataToMap(it) }
+                            android.util.Log.d("FeederRealMap", "onPageFinished: $url")
+                            view?.let { pushDataToMap(it, force = true) }
                         }
                     }
 

@@ -170,18 +170,12 @@ object DepartureAlarmStore {
         save(all)
     }
 
-    /** Drops alarms that have already announced both stages, unless commute schedule is active. */
+    /** Retains user-armed alarms across commutes and app updates; stages auto-reset via load(). */
     @Synchronized
     fun pruneCompleted(): Int {
-        val all = load()
-        // If user has commute schedule enabled, retain alarms across their daily schedule
-        if (AlertScheduleManager.config.value.enabled) return 0
-
-        val now = System.currentTimeMillis()
-        // Otherwise, only prune if completed more than 30 minutes ago
-        val kept = all.filter { !it.isComplete || (now - it.stage2FiredAt < 30 * 60 * 1000L) }
-        if (kept.size != all.size) save(kept)
-        return all.size - kept.size
+        // Alarms are persistent user settings that remain armed across commutes and updates.
+        // We reset stages for next bus approach in load(), but never delete the user's alarms.
+        return 0
     }
 
 }

@@ -257,6 +257,10 @@ fun TwoStageAlertSheet(
                     // Ask for notification permission now, not on launch: this is
                     // the moment the user actually wants to be warned.
                     context.findActivity()?.requestNotificationPermission()
+                    // Prompt 1-tap background auto-start if battery optimizations active
+                    if (!my.feeder.app.util.OemBatteryHelper.isIgnoringBatteryOptimizations(context)) {
+                        my.feeder.app.util.OemBatteryHelper.launchOneTapSetup(context)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(Radius.md),

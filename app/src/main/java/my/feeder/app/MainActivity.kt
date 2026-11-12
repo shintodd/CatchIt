@@ -91,6 +91,10 @@ class MainActivity : ComponentActivity() {
         handleIntentExtras(intent)
         AlertScheduleManager.init(this)
         ThemeManager.init(this)
+        DepartureAlarmStore.init(this)
+        GtfsRepository.initPins(this)
+        GtfsRepository.initAlarms(this)
+        ServiceAlertsRepository.init(this)
 
         setContent {
             CatchItTheme {
@@ -145,6 +149,9 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra(EXTRA_OPEN_ALERMS, false)) {
             NotificationNavigation.pendingAlarms = true
         }
+        if (intent.hasExtra("catchit.testBus")) {
+            NotificationNavigation.testBusEnabled = intent.getBooleanExtra("catchit.testBus", false)
+        }
         intent.getStringExtra(EXTRA_ROUTE_CODE)?.let { route ->
             if (route.isNotBlank()) NotificationNavigation.pendingRouteCode = route
         }
@@ -161,6 +168,7 @@ object NotificationNavigation {
         set(value) { pendingNotifications = value }
     var pendingAlarms by mutableStateOf(false)
     var pendingRouteCode by mutableStateOf<String?>(null)
+    var testBusEnabled by mutableStateOf(false)
 }
 
 data class SelectedAlertTarget(
@@ -252,25 +260,30 @@ fun FeederAppNavigation() {
     }
 
     // Deep link navigation from notifications
-    LaunchedEffect(NotificationNavigation.pendingNotifications) {
-        if (NotificationNavigation.pendingNotifications) {
+    LaunchedEffect(NotificationNavigation.pendingNotifications, showSplash) {
+        if (!showSplash && NotificationNavigation.pendingNotifications) {
             NotificationNavigation.pendingNotifications = false
             navController.navigate("notifications")
         }
     }
 
-    LaunchedEffect(NotificationNavigation.pendingAlarms) {
-        if (NotificationNavigation.pendingAlarms) {
+    LaunchedEffect(NotificationNavigation.pendingAlarms, showSplash) {
+        if (!showSplash && NotificationNavigation.pendingAlarms) {
             NotificationNavigation.pendingAlarms = false
             navController.navigate("alerts")
         }
     }
 
-    LaunchedEffect(NotificationNavigation.pendingRouteCode) {
-        val route = NotificationNavigation.pendingRouteCode
-        if (!route.isNullOrBlank()) {
-            NotificationNavigation.pendingRouteCode = null
-            navController.navigate("route/$route")
+    LaunchedEffect(NotificationNavigation.pendingRouteCode, showSplash) {
+        if (!showSplash) {
+            val route = NotificationNavigation.pendingRouteCode
+            if (!route.isNullOrBlank()) {
+                NotificationNavigation.pendingRouteCode = null
+                navController.navigate("route/$route") {
+                    popUpTo("home") { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
         }
     }
 

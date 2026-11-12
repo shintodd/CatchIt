@@ -63,7 +63,10 @@ object OemBatteryHelper {
             Intent().setComponent(ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity")),
             Intent().setComponent(ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")),
             // Samsung
-            Intent().setComponent(ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity"))
+            Intent().setComponent(ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity")),
+            // Huawei / Honor
+            Intent().setComponent(ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")),
+            Intent().setComponent(ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.bootstart.BootStartActivity"))
         )
 
         for (intent in intents) {
@@ -84,6 +87,19 @@ object OemBatteryHelper {
             return true
         } catch (_: Exception) {
             return false
+        }
+    }
+
+    /**
+     * One-tap background setup: directly pops Android's native battery optimization
+     * whitelist dialog ("Let app always run in background?"). If already whitelisted,
+     * routes directly to OEM autostart management if needed.
+     */
+    fun launchOneTapSetup(context: Context) {
+        if (!isIgnoringBatteryOptimizations(context)) {
+            requestIgnoreBatteryOptimizations(context)
+        } else {
+            openAutostartSettings(context)
         }
     }
 }

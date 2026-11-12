@@ -28,7 +28,8 @@ data class GtfsRoute(
     val headsign: String,
     val stopsCount: Int,
     val stops: List<GtfsStop>,
-    val shape: List<Pair<Double, Double>> // lat, lon
+    val shape: List<Pair<Double, Double>>, // lat, lon
+    val agency: String = "RapidKL"
 )
 
 data class LiveBusState(
@@ -253,7 +254,8 @@ object GtfsRepository {
         pinPrefs?.edit()?.clear()?.apply()
         context.getSharedPreferences("feeder_pins", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("departure_alarms", Context.MODE_PRIVATE).edit().clear().apply()
-        context.getSharedPreferences("commute_schedule_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("alert_schedule_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("catchit_theme_prefs", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("service_alerts", Context.MODE_PRIVATE).edit().clear().apply()
     }
 
@@ -273,40 +275,54 @@ object GtfsRepository {
         normalised.substringBefore(' ')
 
     suspend fun loadCatalog(context: Context) = withContext(Dispatchers.IO) {
-        if (_routes.value.isNotEmpty()) return@withContext
+        if (_routes.value.isNotEmpty() && _routes.value.size >= 400) return@withContext
         try {
-            val jsonString = context.assets.open("gtfs_feeder_catalog.json").bufferedReader().use { it.readText() }
-            val jsonArray = JSONArray(jsonString)
-            val parsedRoutes = ArrayList<GtfsRoute>(jsonArray.length())
+            val assetName = if (context.assets.list("")?.contains("nationwide_transit_catalog.json") == true) {
+                "nationwide_transit_catalog.json"
+            } else {
+                "gtfs_feeder_catalog.json"
+            }
+            val jsonString = context.assets.open(assetName).bufferedReader().use { it.readText() }
+            val routesArray = if (jsonString.trimStart().startsWith("{")) {
+                JSONObject(jsonString).optJSONArray("routes") ?: JSONArray()
+            } else {
+                JSONArray(jsonString)
+            }
+            val parsedRoutes = ArrayList<GtfsRoute>(routesArray.length())
 
-            for (i in 0 until jsonArray.length()) {
-                val rObj = jsonArray.getJSONObject(i)
+            for (i in 0 until routesArray.length()) {
+                val rObj = routesArray.getJSONObject(i)
                 val id = rObj.getString("id")
                 val code = rObj.getString("code")
-                val headsign = rObj.getString("headsign")
-                val stopsCount = rObj.getInt("stopsCount")
+                val headsign = rObj.optString("headsign", rObj.optString("name", "Bus Route"))
+                val stopsCount = rObj.optInt("stopsCount", 0)
+                val agency = rObj.optString("agency", "RapidKL")
 
-                val stopsArr = rObj.getJSONArray("stops")
-                val stopsList = ArrayList<GtfsStop>(stopsArr.length())
-                for (s in 0 until stopsArr.length()) {
-                    val sObj = stopsArr.getJSONObject(s)
-                    stopsList.add(
-                        GtfsStop(
-                            id = sObj.getString("id"),
-                            code = sObj.optString("code", ""),
-                            name = sObj.optString("name", "Stop"),
-                            lat = sObj.optDouble("lat", 0.0),
-                            lon = sObj.optDouble("lon", 0.0),
-                            seq = sObj.optInt("seq", s + 1)
+                val stopsArr = rObj.optJSONArray("stops")
+                val stopsList = ArrayList<GtfsStop>(stopsArr?.length() ?: 0)
+                if (stopsArr != null) {
+                    for (s in 0 until stopsArr.length()) {
+                        val sObj = stopsArr.getJSONObject(s)
+                        stopsList.add(
+                            GtfsStop(
+                                id = sObj.getString("id"),
+                                code = sObj.optString("code", ""),
+                                name = sObj.optString("name", "Stop"),
+                                lat = sObj.optDouble("lat", 0.0),
+                                lon = sObj.optDouble("lon", 0.0),
+                                seq = sObj.optInt("seq", s + 1)
+                            )
                         )
-                    )
+                    }
                 }
 
-                val shapeArr = rObj.getJSONArray("shape")
-                val shapeList = ArrayList<Pair<Double, Double>>(shapeArr.length())
-                for (sp in 0 until shapeArr.length()) {
-                    val ptArr = shapeArr.getJSONArray(sp)
-                    shapeList.add(Pair(ptArr.getDouble(0), ptArr.getDouble(1)))
+                val shapeArr = rObj.optJSONArray("shape")
+                val shapeList = ArrayList<Pair<Double, Double>>(shapeArr?.length() ?: 0)
+                if (shapeArr != null) {
+                    for (sp in 0 until shapeArr.length()) {
+                        val ptArr = shapeArr.getJSONArray(sp)
+                        shapeList.add(Pair(ptArr.getDouble(0), ptArr.getDouble(1)))
+                    }
                 }
 
                 parsedRoutes.add(
@@ -314,9 +330,10 @@ object GtfsRepository {
                         id = id,
                         code = code,
                         headsign = headsign,
-                        stopsCount = stopsCount,
+                        stopsCount = if (stopsCount > 0) stopsCount else stopsList.size,
                         stops = stopsList,
-                        shape = shapeList
+                        shape = shapeList,
+                        agency = agency
                     )
                 )
             }
@@ -328,7 +345,7 @@ object GtfsRepository {
     }
 
     suspend fun loadNationwideCatalog(context: Context) = withContext(Dispatchers.IO) {
-        if (_nationwideStops.value.isNotEmpty()) return@withContext
+        if (_nationwideStops.value.isNotEmpty() && _nationwideRoutes.value.isNotEmpty()) return@withContext
         try {
             val jsonString = context.assets.open("nationwide_transit_catalog.json").bufferedReader().use { it.readText() }
             val root = JSONObject(jsonString)
@@ -374,6 +391,10 @@ object GtfsRepository {
 
             _nationwideRoutes.value = parsedRoutes
             _nationwideStops.value = parsedStops
+
+            if (_routes.value.isEmpty() || _routes.value.size < parsedRoutes.size) {
+                loadCatalog(context)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

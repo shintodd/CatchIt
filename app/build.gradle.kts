@@ -43,6 +43,9 @@ android {
     buildTypes {
         debug {
             isPseudoLocalesEnabled = true
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         release {
             isMinifyEnabled = true
