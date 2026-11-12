@@ -70,7 +70,7 @@ fun RouteDetailScreen(
     val stops = route?.stops ?: emptyList()
 
     val buses = remember(liveBuses, effectiveCode, my.feeder.app.NotificationNavigation.testBusEnabled, stops) {
-        if (my.feeder.app.NotificationNavigation.testBusEnabled && stops.isNotEmpty()) {
+        if (my.feeder.app.BuildConfig.DEBUG && my.feeder.app.NotificationNavigation.testBusEnabled && stops.isNotEmpty()) {
             val targetStop = stops.find { it.name.contains("COPLACE", ignoreCase = true) } ?: stops[stops.size / 2]
             listOf(
                 my.feeder.app.data.LiveBusState(
