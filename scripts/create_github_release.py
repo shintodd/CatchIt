@@ -16,21 +16,20 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.6 🚌\n\n"
+        "## CatchIt v1.2.7 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.6\n"
-        "- **Legal & Privacy Compliance**: Full audit against the 20-Point AI App Legal Compliance Checklist.\n"
-        "- **Privacy & Terms Integration**: Integrated dedicated in-app links to `PRIVACY_POLICY.md` and `TERMS_OF_SERVICE.md` inside Settings.\n"
-        "- **Self-Serve Data Erasure (GDPR Art. 17)**: Added 1-click 'Reset & Erase All Local Data' feature in Settings that clears all local storage, alarms, and preferences.\n"
-        "- **Zero Tracking & Data Minimization**: Verified zero user PII collection, zero tracker/analytics SDKs, zero ads.\n"
-        "- **120/120 Unit Tests Passing**.\n\n"
+        "### What's New in v1.2.7\n"
+        "- **Nationwide Transit Lines & Stops**: All 435 bus routes nationwide now display complete street polylines, all stop points, and real-time live tracking.\n"
+        "- **Data Persistence Across Updates**: Saved starred routes, pinned stops, and departure alarms now survive app updates seamlessly.\n"
+        "- **Directional Bus Icon**: Replaced ambiguous triangle marker with aerodynamic directional heading beak and upright transit bus glyph.\n"
+        "- **Background Auto-Start**: Direct guided shortcut to device OEM power manager & background autostart settings.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.6.apk` below and install directly on your Android phone."
+        "Download `CatchIt-v1.2.7.apk` below or update directly in-app."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.6',
-        'name': 'CatchIt v1.2.6',
+        'tag_name': 'v1.2.7',
+        'name': 'CatchIt v1.2.7',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -59,7 +58,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.6.apk',
+                f'{upload_url}?name=CatchIt-v1.2.7.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',
