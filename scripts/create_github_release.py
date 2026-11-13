@@ -16,20 +16,21 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.7 🚌\n\n"
+        "## CatchIt v1.2.8 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.7\n"
-        "- **Nationwide Transit Lines & Stops**: All 435 bus routes nationwide now display complete street polylines, all stop points, and real-time live tracking.\n"
-        "- **Data Persistence Across Updates**: Saved starred routes, pinned stops, and departure alarms now survive app updates seamlessly.\n"
-        "- **Directional Bus Icon**: Replaced ambiguous triangle marker with aerodynamic directional heading beak and upright transit bus glyph.\n"
-        "- **Background Auto-Start**: Direct guided shortcut to device OEM power manager & background autostart settings.\n\n"
+        "### What's New in v1.2.8\n"
+        "- **Nationwide Live Fleet Normalization**: Added full operator route mapping and direction stripping covering 140+ previously missing bus routes.\n"
+        "- **Council Lines Live Tracking**: Live tracking restored for Petaling Jaya (PJ01–PJ06), Putrajaya (P101–P108), Shah Alam (SA02–SA08), Ampang Jaya (AJ01–AJ04), Kajang (KJ01–KJ04), Selayang (MPS1–MPS4), and Banting (BTG1–BTG2).\n"
+        "- **Trunk & Feeder Variant Tracking**: Live tracking restored for numeric trunk lines (e.g. 420, 600, 754 broadcast as U-prefixed) and feeder direction variants (T810B, T110B, T711B, etc.).\n"
+        "- **Clean Route Details**: Fixed duplicate headsign display (e.g. D40 D40 now shows clean route name).\n"
+        "- **Active Fleet Jump**: 760+ buses now tracked concurrently in real-time.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.7.apk` below or update directly in-app."
+        "Download `CatchIt-v1.2.8.apk` below or update directly in-app."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.7',
-        'name': 'CatchIt v1.2.7',
+        'tag_name': 'v1.2.8',
+        'name': 'CatchIt v1.2.8',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -58,7 +59,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.7.apk',
+                f'{upload_url}?name=CatchIt-v1.2.8.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',
