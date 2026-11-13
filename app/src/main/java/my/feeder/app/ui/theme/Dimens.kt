@@ -2,34 +2,47 @@ package my.feeder.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Design tokens for CatchIt. One source of truth for spacing, corner radii,
- * type scale and the accent colour — so screens stop inventing their own
- * ad-hoc 10/12/14/16 values and instead compose from this scale.
- *
- * Radius rule: an inner element's corner radius = its parent's radius minus the
- * padding between them. E.g. a 16dp card with 12dp content padding uses 8dp for
- * inner chips (rounded down to the nearest scale step).
+ * Design tokens for CatchIt adhering to Material Design 3 and the 4pt/8pt Spacing & Layout System.
+ * Establishes strict mathematical spatial rhythm and concentric radius harmony across all viewports.
  */
 
 object Spacing {
-    val xs = 4.dp
-    val sm = 8.dp
-    val md = 12.dp
-    val lg = 16.dp
-    val xl = 20.dp
-    val xxl = 24.dp
+    val hairline: Dp = 2.dp      // Step 0.5 (2px): hairlines, subtle dividers
+    val xs: Dp = 4.dp            // Step 1   (4px): micro gaps, badge padding
+    val fine: Dp = 6.dp          // Step 1.5 (6px): compact chip padding
+    val sm: Dp = 8.dp            // Step 2   (8px): button icon spacing, intra-group gap
+    val md: Dp = 12.dp           // Step 3   (12px): medium-compact list item gaps
+    val lg: Dp = 16.dp           // Step 4   (16px): standard card padding, mobile gutter
+    val xl: Dp = 20.dp           // Step 5   (20px): modal card inset, header padding
+    val xxl: Dp = 24.dp          // Step 6   (24px): section stack gaps
+    val xxxl: Dp = 32.dp         // Step 8   (32px): major section breathing room
+    val hero: Dp = 48.dp         // Step 12  (48px): hero padding, minimum touch target (M3/WCAG)
+    val huge: Dp = 64.dp         // Step 16  (64px): top safe-area breathing room, splash
+
+    val minTouchTarget: Dp = 48.dp
+    val gutterMobile: Dp = 16.dp
 }
 
 object Radius {
-    val sm = 12.dp
-    val md = 16.dp
-    val lg = 22.dp
-    val xl = 28.dp
-    val pill = 100.dp
+    val xs: Dp = 4.dp
+    val sm: Dp = 8.dp
+    val md: Dp = 12.dp
+    val base: Dp = 16.dp
+    val lg: Dp = 20.dp
+    val xl: Dp = 24.dp
+    val xxl: Dp = 32.dp
+    val pill: Dp = 100.dp
+
+    /**
+     * Concentric Border Radius formula: Radius_outer = Radius_inner + Padding
+     * Keeps curves visually parallel without visual corner distortion.
+     */
+    fun concentric(inner: Dp, padding: Dp): Dp = inner + padding
 }
 
 object TypeSize {

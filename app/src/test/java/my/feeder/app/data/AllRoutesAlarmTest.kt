@@ -122,6 +122,59 @@ class AllRoutesAlarmTest {
     }
 
     @Test
+    fun `comprehensive route code normalisation maps council, trunk and feeder variants`() {
+        // Feeder standard & loop variants
+        assertEquals("T507", GtfsRepository.baseRouteCode("T5070"))
+        assertEquals("T815", GtfsRepository.baseRouteCode("T8151"))
+        assertEquals("T409", GtfsRepository.baseRouteCode("T409"))
+        assertEquals("T810", GtfsRepository.baseRouteCode("T810B"))
+        assertEquals("T110", GtfsRepository.baseRouteCode("T110B"))
+        assertEquals("T450", GtfsRepository.baseRouteCode("T4508"))
+        assertEquals("T300", GtfsRepository.baseRouteCode("T3008"))
+        assertEquals("T571", GtfsRepository.baseRouteCode("T5718"))
+
+        // Trunk U and B prefixes
+        assertEquals("420", GtfsRepository.baseRouteCode("U4200"))
+        assertEquals("600", GtfsRepository.baseRouteCode("U6000"))
+        assertEquals("300", GtfsRepository.baseRouteCode("U3000"))
+        assertEquals("754", GtfsRepository.baseRouteCode("U7548"))
+        assertEquals("771", GtfsRepository.baseRouteCode("U7718"))
+        assertEquals("822", GtfsRepository.baseRouteCode("U8220"))
+        assertEquals("100", GtfsRepository.baseRouteCode("B1000"))
+
+        // Petaling Jaya City Bus
+        assertEquals("PJ01", GtfsRepository.baseRouteCode("P0010"))
+        assertEquals("PJ02", GtfsRepository.baseRouteCode("P0020"))
+        assertEquals("PJ06", GtfsRepository.baseRouteCode("P0060"))
+
+        // Putrajaya Bus
+        assertEquals("P101", GtfsRepository.baseRouteCode("P1010"))
+        assertEquals("P108", GtfsRepository.baseRouteCode("P1080"))
+
+        // Smart Selangor Council Lines
+        assertEquals("SA02", GtfsRepository.baseRouteCode("S4020"))
+        assertEquals("SA05", GtfsRepository.baseRouteCode("S4050"))
+        assertEquals("SA07", GtfsRepository.baseRouteCode("S4070"))
+        assertEquals("SA08", GtfsRepository.baseRouteCode("S4080"))
+        assertEquals("AJ2A", GtfsRepository.baseRouteCode("S1030"))
+        assertEquals("AJ03", GtfsRepository.baseRouteCode("S1050"))
+        assertEquals("KJ01", GtfsRepository.baseRouteCode("S0030"))
+        assertEquals("KJ02", GtfsRepository.baseRouteCode("S1060"))
+        assertEquals("MPS1", GtfsRepository.baseRouteCode("S0070"))
+        assertEquals("MPS2A", GtfsRepository.baseRouteCode("S1190"))
+        assertEquals("MPS4", GtfsRepository.baseRouteCode("S1490"))
+        assertEquals("BTG1", GtfsRepository.baseRouteCode("S0060"))
+        assertEquals("PAVBJ", GtfsRepository.baseRouteCode("S6060"))
+
+        // Preserves existing catalog codes
+        assertEquals("420", GtfsRepository.baseRouteCode("420"))
+        assertEquals("T507", GtfsRepository.baseRouteCode("T507"))
+        assertEquals("SA02", GtfsRepository.baseRouteCode("SA02"))
+        assertEquals("PJ01", GtfsRepository.baseRouteCode("PJ01"))
+        assertEquals("AJ03", GtfsRepository.baseRouteCode("AJ03"))
+    }
+
+    @Test
     fun `all 91 catalog routes have valid stop geometries and resolve service headings`() {
         val assetFile = File("src/main/assets/gtfs_feeder_catalog.json")
         assertTrue("Catalog file must exist", assetFile.exists())

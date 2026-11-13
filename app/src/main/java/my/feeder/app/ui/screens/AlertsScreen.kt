@@ -136,7 +136,7 @@ fun AlertsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         LucideIcon(
@@ -177,7 +177,7 @@ fun AlertsScreen(
                 var isWhitelisted by remember { mutableStateOf(my.feeder.app.util.OemBatteryHelper.isIgnoringBatteryOptimizations(context)) }
                 if (!isWhitelisted) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Radius.md),
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                         modifier = Modifier
@@ -188,7 +188,7 @@ fun AlertsScreen(
                             }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             LucideIcon(
@@ -197,7 +197,7 @@ fun AlertsScreen(
                                 size = 20.dp,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(Spacing.md))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Enable Background Auto-Start",
@@ -313,13 +313,13 @@ private fun ServiceAlertsEmptyRow() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = CircleShape,
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier.size(Spacing.hero)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     LucideIcon(
@@ -330,7 +330,7 @@ private fun ServiceAlertsEmptyRow() {
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "No disruptions reported",
@@ -356,13 +356,13 @@ private fun NoAlarmsHint() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = CircleShape,
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier.size(Spacing.hero)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     LucideIcon(
@@ -431,7 +431,7 @@ private fun ServiceAlertRow(
                 ServiceAlertsRepository.markRead(sa.url)
             }
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -439,7 +439,7 @@ private fun ServiceAlertRow(
                 Surface(
                     color = kindColor.copy(alpha = 0.15f),
                     shape = CircleShape,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(Spacing.hero)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         LucideIcon(
@@ -450,11 +450,11 @@ private fun ServiceAlertRow(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(Spacing.md))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.fine)
                     ) {
                         Surface(
                             shape = RoundedCornerShape(Radius.sm),
@@ -465,7 +465,7 @@ private fun ServiceAlertRow(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = kindColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = Spacing.fine, vertical = Spacing.hairline)
                             )
                         }
 
@@ -519,7 +519,7 @@ private fun ServiceAlertRow(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs)
                             )
                         }
                     }
@@ -544,7 +544,7 @@ private fun ServiceAlertRow(
                     shape = RoundedCornerShape(Radius.sm),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
+                    Column(modifier = Modifier.padding(Spacing.md)) {
                         Text(
                             text = "UPDATE DETAILS",
                             fontSize = 11.sp,
@@ -552,7 +552,7 @@ private fun ServiceAlertRow(
                             color = kindColor,
                             letterSpacing = 0.5.sp
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
                             text = if (sa.excerpt.isNotBlank()) sa.excerpt else "No additional description in bulletin header. Tap below to read full announcement.",
                             fontSize = 13.sp,

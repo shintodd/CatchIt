@@ -164,12 +164,12 @@ fun TwoStageAlertSheet(
 
         // Highlighted Commute Schedule Badge (Clean & Concise)
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Radius.md),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 LucideIcon(
@@ -178,7 +178,7 @@ fun TwoStageAlertSheet(
                     size = 18.dp,
                     tint = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(Spacing.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (scheduleConfig.enabled) {
@@ -210,7 +210,7 @@ fun TwoStageAlertSheet(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (scheduleConfig.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.hairline)
                     )
                 }
             }
@@ -345,7 +345,7 @@ private fun AlarmStageCard(
     onPickStop: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(Radius.base),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         modifier = Modifier
@@ -353,7 +353,7 @@ private fun AlarmStageCard(
             .clickable(onClick = onPickStop)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
@@ -370,7 +370,7 @@ private fun AlarmStageCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -379,7 +379,7 @@ private fun AlarmStageCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(Spacing.fine))
                     Text(
                         text = "· $subtitle",
                         fontSize = 11.sp,
@@ -388,7 +388,7 @@ private fun AlarmStageCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(Spacing.hairline))
                 Text(
                     text = stop?.name ?: "Tap to choose a stop",
                     fontSize = 15.sp,

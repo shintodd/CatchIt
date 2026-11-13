@@ -4,6 +4,7 @@ import my.feeder.app.R
 import my.feeder.app.ui.components.LucideAnimatedBell
 import my.feeder.app.ui.components.LucideIcon
 import my.feeder.app.ui.components.FeederRealMap
+import my.feeder.app.ui.components.MaxWidthContainer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -128,6 +129,16 @@ fun RouteDetailScreen(
         )
     )
 
+    val effectiveHeadsign = remember(route, effectiveCode) {
+        val h = route?.headsign.orEmpty().trim()
+        val n = route?.name.orEmpty().trim()
+        when {
+            h.isNotBlank() && !h.equals(effectiveCode, ignoreCase = true) -> h
+            n.isNotBlank() && !n.equals(effectiveCode, ignoreCase = true) -> n
+            else -> ""
+        }
+    }
+
     BottomSheetScaffold(
         scaffoldState = sheetState,
         sheetPeekHeight = 140.dp,
@@ -147,14 +158,16 @@ fun RouteDetailScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(Spacing.sm))
-                        Text(
-                            text = route?.headsign ?: "",
-                            fontSize = TypeSize.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
+                        if (effectiveHeadsign.isNotBlank()) {
+                            Text(
+                                text = effectiveHeadsign,
+                                fontSize = TypeSize.caption,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -202,33 +215,37 @@ fun RouteDetailScreen(
                 stopEtas = stopEtas,
                 nextBus = nextBus,
                 activeAlerts = activeAlerts,
-                headsign = route?.headsign.orEmpty(),
+                headsign = effectiveHeadsign,
                 onAlertClick = onAlertClick
             )
         }
     ) { padding ->
-        Column(
+        MaxWidthContainer(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // === NEXT BUS STRIP ===
-            NextBusStrip(
-                nextBus = nextBus,
-                routeCode = effectiveCode,
-                liveCount = buses.size,
-                isArmed = activeAlerts.keys.any { it.startsWith("${effectiveCode}_") }
-            )
-
-            // === MAP (fills the rest) ===
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                FeederRealMap(
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // === NEXT BUS STRIP ===
+                NextBusStrip(
+                    nextBus = nextBus,
                     routeCode = effectiveCode,
-                    stops = stops,
-                    shapePoints = route?.shape ?: emptyList(),
-                    activeBuses = buses,
-                    modifier = Modifier.fillMaxSize()
+                    liveCount = buses.size,
+                    isArmed = activeAlerts.keys.any { it.startsWith("${effectiveCode}_") }
                 )
+
+                // === MAP (fills the rest) ===
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    FeederRealMap(
+                        routeCode = effectiveCode,
+                        stops = stops,
+                        shapePoints = route?.shape ?: emptyList(),
+                        activeBuses = buses,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -505,8 +522,8 @@ private fun RouteStopsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.xs),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 items(stops.sortedBy { it.seq }) { stop ->
                     val isArmed = activeAlerts.containsKey("${routeCode}_${stop.id}")
@@ -528,19 +545,19 @@ private fun RouteStopsSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                            modifier = Modifier.padding(Spacing.sm).fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
                                 color = if (stop.seq == 1) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.surface,
                                 shape = CircleShape,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(Spacing.xxl)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = "${stop.seq}",
-                                        fontSize = 12.sp,
+                                        fontSize = TypeSize.caption,
                                         fontWeight = FontWeight.Bold,
                                         color = if (stop.seq == 1) MaterialTheme.colorScheme.onPrimary
                                         else MaterialTheme.colorScheme.onSurface
@@ -548,7 +565,7 @@ private fun RouteStopsSheet(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(Spacing.sm))
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(

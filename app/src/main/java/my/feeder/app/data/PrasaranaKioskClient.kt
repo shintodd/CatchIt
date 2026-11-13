@@ -245,13 +245,70 @@ object PrasaranaKioskClient {
     }
 
     /**
-     * "T5070" -> "T507", "T1551" -> "T155", "T8520" -> "T852".
-     * The trailing digit is the direction, not part of the route code.
+     * Known Prasarana internal route_id mappings to public catalog route codes.
+     * Derived from official data.gov.my GTFS-static feed for Rapid Bus KL & Council services.
      */
-    private fun stripDirectionSuffix(raw: String): String {
+    private val OPERATOR_ROUTE_MAP = mapOf(
+        // Petaling Jaya City Bus (PJ01 to PJ06)
+        "P001" to "PJ01", "P002" to "PJ02", "P003" to "PJ03",
+        "P004" to "PJ04", "P005" to "PJ05", "P006" to "PJ06",
+        // Putrajaya Bus (P101 to P108)
+        "P101" to "P101", "P102" to "P102", "P103" to "P103",
+        "P104" to "P104", "P105" to "P105", "P106" to "P106", "P108" to "P108",
+        // Smart Selangor - Shah Alam
+        "S402" to "SA02", "S405" to "SA05", "S407" to "SA07", "S408" to "SA08",
+        // Smart Selangor - Ampang Jaya
+        "S103" to "AJ2A", "S104" to "AJ2B", "S105" to "AJ03", "S114" to "AJ04", "S004" to "AJ01",
+        // Smart Selangor - Kajang / Bangi
+        "S003" to "KJ01", "S106" to "KJ02", "S107" to "KJ03", "S117" to "KJ04",
+        // Smart Selangor - Selayang / Rawang
+        "S007" to "MPS1", "S119" to "MPS2A", "S139" to "MPS3", "S149" to "MPS4",
+        // Smart Selangor - Banting
+        "S006" to "BTG1", "S206" to "BTG2",
+        // Special shuttles & BRT
+        "S606" to "PAVBJ", "S501" to "MENARA PRASARANA", "S012" to "HLB2",
+        "B100" to "100",
+        // Feeder loop variants
+        "T4069" to "T406B", "T4001" to "T400B", "T5121" to "T512B"
+    )
+
+    /**
+     * "T5070" -> "T507", "T1551" -> "T155", "T8520" -> "T852".
+     * "U4200" -> "420", "U6000" -> "600", "B1000" -> "100".
+     * "P0010" -> "PJ01", "S4070" -> "SA07", "T810B" -> "T810".
+     * Strips operator prefixes, council mappings, and direction suffixes (digits or A/B).
+     */
+    internal fun stripDirectionSuffix(raw: String): String {
         val trimmed = raw.trim().uppercase()
         if (trimmed.length < 2) return trimmed
-        val last = trimmed.last()
-        return if (last.isDigit()) trimmed.dropLast(1) else trimmed
+
+        // 1. Direct match in operator route map
+        OPERATOR_ROUTE_MAP[trimmed]?.let { return it }
+
+        // 2. Match with 1-character suffix dropped (e.g. P0010 -> P001 -> PJ01)
+        if (trimmed.length >= 4) {
+            OPERATOR_ROUTE_MAP[trimmed.dropLast(1)]?.let { return it }
+        }
+
+        var code = trimmed
+        // 3. Operator trunk prefix 'U' or 'B' on numeric routes (e.g. U4200 -> 4200, B1000 -> 1000)
+        if (code.length >= 2 && (code.startsWith("U") || code.startsWith("B")) && code[1].isDigit()) {
+            code = code.substring(1)
+        }
+
+        // 4. 4-digit numeric route with direction digit (e.g. 4200 -> 420, 7548 -> 754, 6000 -> 600)
+        if (code.length == 4 && code.all { it.isDigit() }) {
+            code = code.dropLast(1)
+        }
+        // 5. 5-character feeder route with direction digit (e.g. T5070 -> T507, T8151 -> T815, T4508 -> T450)
+        else if (code.startsWith("T") && code.length == 5 && code.substring(1).all { it.isDigit() }) {
+            code = code.dropLast(1)
+        }
+        // 6. 5-character feeder route with letter direction suffix (e.g. T810B -> T810, T110A -> T110)
+        else if (code.startsWith("T") && code.length == 5 && (code.endsWith("A") || code.endsWith("B")) && code.substring(1, 4).all { it.isDigit() }) {
+            code = code.dropLast(1)
+        }
+
+        return code
     }
 }

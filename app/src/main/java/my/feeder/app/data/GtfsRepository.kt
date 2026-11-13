@@ -29,7 +29,8 @@ data class GtfsRoute(
     val stopsCount: Int,
     val stops: List<GtfsStop>,
     val shape: List<Pair<Double, Double>>, // lat, lon
-    val agency: String = "RapidKL"
+    val agency: String = "RapidKL",
+    val name: String = ""
 )
 
 data class LiveBusState(
@@ -263,16 +264,18 @@ object GtfsRepository {
 
     /**
      * GTFS-RT reports route_id with a direction suffix, e.g. "T155 Inbound" /
-     * "T155 Outbound", while catalogue codes are bare ("T155"). Keep the direction
-     * so the two directions never collapse into one bucket and cross-contaminate
-     * which bus the UI treats as "soonest".
+     * "T155 Outbound" or "U4200", while catalogue codes are bare ("T155", "420").
      */
-    private fun normaliseRouteCode(raw: String): String =
-        raw.trim().uppercase()
+    internal fun normaliseRouteCode(raw: String): String =
+        baseRouteCode(raw)
 
-    /** Catalogue lookup key: strips the direction suffix. */
-    private fun baseRouteCode(normalised: String): String =
-        normalised.substringBefore(' ')
+    /** Catalogue lookup key: strips direction suffix, council mappings, and operator prefixes. */
+    internal fun baseRouteCode(normalised: String): String {
+        val trimmed = normalised.trim()
+        if (trimmed.isEmpty()) return ""
+        val token = trimmed.substringBefore(' ')
+        return PrasaranaKioskClient.stripDirectionSuffix(token)
+    }
 
     suspend fun loadCatalog(context: Context) = withContext(Dispatchers.IO) {
         if (_routes.value.isNotEmpty() && _routes.value.size >= 400) return@withContext
@@ -294,7 +297,15 @@ object GtfsRepository {
                 val rObj = routesArray.getJSONObject(i)
                 val id = rObj.getString("id")
                 val code = rObj.getString("code")
-                val headsign = rObj.optString("headsign", rObj.optString("name", "Bus Route"))
+                val rawHeadsign = rObj.optString("headsign", "")
+                val rawName = rObj.optString("name", "")
+                val resolvedHeadsign = if (rawHeadsign.isNotBlank() && !rawHeadsign.equals(code, ignoreCase = true)) {
+                    rawHeadsign
+                } else if (rawName.isNotBlank() && !rawName.equals(code, ignoreCase = true)) {
+                    rawName
+                } else {
+                    rawHeadsign.ifBlank { rawName.ifBlank { "Bus Route" } }
+                }
                 val stopsCount = rObj.optInt("stopsCount", 0)
                 val agency = rObj.optString("agency", "RapidKL")
 
@@ -329,11 +340,12 @@ object GtfsRepository {
                     GtfsRoute(
                         id = id,
                         code = code,
-                        headsign = headsign,
+                        headsign = resolvedHeadsign,
                         stopsCount = if (stopsCount > 0) stopsCount else stopsList.size,
                         stops = stopsList,
                         shape = shapeList,
-                        agency = agency
+                        agency = agency,
+                        name = rawName.ifBlank { resolvedHeadsign }
                     )
                 )
             }
@@ -534,18 +546,25 @@ object GtfsRepository {
         _schedules.value[routeCode.trim().uppercase()] ?: emptyList()
 
     /**
-     * Live buses on a route. Matches both the bare catalogue code ("T155") and
-     * direction-suffixed feed ids ("T155 INBOUND"), so a route with two directions
-     * returns the vehicles from both rather than losing one silently.
+     * Live buses on a route. Matches bare catalogue code ("420", "T155") as well as
+     * direction-suffixed and operator-prefixed variants ("U420", "U4200", "T155 INBOUND").
      */
     fun liveBusesFor(routeCode: String): List<LiveBusState> {
-        val want = routeCode.trim().uppercase()
+        val want = baseRouteCode(routeCode.trim().uppercase())
         val exact = _liveBuses.value[want]
-        if (exact != null) return exact
+        if (exact != null && exact.isNotEmpty()) return exact
 
-        // No exact bucket: gather every direction-suffixed variant of this code.
+        val altWant = if (want.length >= 2 && (want.startsWith("U") || want.startsWith("B")) && want[1].isDigit()) {
+            want.substring(1)
+        } else {
+            "U$want"
+        }
+        val alt = _liveBuses.value[altWant]
+        if (alt != null && alt.isNotEmpty()) return alt
+
+        // Gather all matching variants
         return _liveBuses.value
-            .filterKeys { it.substringBefore(' ') == want }
+            .filterKeys { baseRouteCode(it) == want || baseRouteCode(it) == altWant }
             .values
             .flatten()
     }

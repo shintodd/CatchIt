@@ -331,7 +331,7 @@ private fun HeroHeader(
                     fontWeight = FontWeight.SemiBold,
                     color = if (liveTotal > 0) Color(0xFF86EFAC) else PulseGreen100.copy(alpha = 0.85f),
                     style = TabularNums,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs)
                 )
             }
         }
@@ -352,7 +352,7 @@ private fun HeroHeader(
                     }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
@@ -404,7 +404,7 @@ private fun HeroHeader(
                 .clickable { showNoticeDialog = true }
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = 11.dp),
+                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
@@ -439,7 +439,7 @@ private fun HeroHeader(
                             color = Color.White.copy(alpha = 0.8f)
                         )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(Spacing.hairline))
                     Text(
                         text = if (hasAlerts) serviceAlerts.first().title else "Live bus GPS via data.gov.my. Arrivals are estimates affected by real traffic.",
                         fontSize = 12.sp,
@@ -497,7 +497,7 @@ private fun HeroHeader(
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
+                                Column(modifier = Modifier.padding(Spacing.md)) {
                                     Text(
                                         text = sa.title,
                                         fontWeight = FontWeight.Bold,
@@ -722,19 +722,6 @@ private fun RouteSearchBar(
                             )
                         )
                     } else {
-                        if (destinationResults.isNotEmpty()) {
-                            SectionLabel("Destinations & Nearby Buses")
-                            destinationResults.forEach { dest ->
-                                DestinationResultRow(
-                                    destination = dest,
-                                    onClickRoute = { code ->
-                                        expanded = false
-                                        onRouteSelected(code)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(Spacing.xs))
-                            }
-                        }
                         if (matches.isNotEmpty()) {
                             SectionLabel("Routes")
                             matches.forEach { r ->
@@ -758,6 +745,19 @@ private fun RouteSearchBar(
                                         onRouteSelected(nr.code)
                                     }
                                 )
+                            }
+                        }
+                        if (destinationResults.isNotEmpty()) {
+                            SectionLabel("Destinations & Nearby Buses")
+                            destinationResults.forEach { dest ->
+                                DestinationResultRow(
+                                    destination = dest,
+                                    onClickRoute = { code ->
+                                        expanded = false
+                                        onRouteSelected(code)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.xs))
                             }
                         }
                         if (stopMatches.isNotEmpty()) {
@@ -836,7 +836,7 @@ private fun DestinationResultRow(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 2.dp),
+                            .padding(vertical = Spacing.hairline),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -857,15 +857,15 @@ private fun DestinationResultRow(
                                 text = "${stop.distanceMeters}m walk",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = Spacing.fine, vertical = Spacing.hairline)
                             )
                         }
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            .padding(bottom = Spacing.xs),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         stop.routeCodes.forEach { routeCode ->
                             Surface(
@@ -873,12 +873,12 @@ private fun DestinationResultRow(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .testTag("destination-route-$routeCode")
-                                    .defaultMinSize(minWidth = 48.dp, minHeight = 44.dp)
+                                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                     .clickable { onClickRoute(routeCode) }
                             ) {
                                 Box(
                                     contentAlignment = Alignment.Center,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs)
                                 ) {
                                     Text(
                                         text = routeCode,
@@ -1228,7 +1228,7 @@ private fun RouteRow(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(Spacing.hairline))
                     Text(
                         text = when {
                             liveCount > 0 && nextThree.isNotEmpty() ->

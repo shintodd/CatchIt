@@ -1,0 +1,13 @@
+@echo off
+title CatchIt Emulator Launcher
+echo [1/3] Starting Android Emulator Medium_Phone_API_37.0...
+start "" "C:\Users\ainol\AppData\Local\Android\Sdk\emulator\emulator.exe" -avd Medium_Phone_API_37.0
+echo [2/3] Waiting for emulator device to come online...
+"C:\Users\ainol\AppData\Local\Android\Sdk\platform-tools\adb.exe" wait-for-device
+echo [3/3] Installing latest CatchIt debug APK...
+"C:\Users\ainol\AppData\Local\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\ainol\Dev\FeederMY\feedermy-android\app\build\outputs\apk\debug\app-debug.apk"
+echo Launching CatchIt app...
+"C:\Users\ainol\AppData\Local\Android\Sdk\platform-tools\adb.exe" shell am start -n my.feeder.app/.MainActivity
+echo.
+echo Emulator and CatchIt are ready!
+pause
