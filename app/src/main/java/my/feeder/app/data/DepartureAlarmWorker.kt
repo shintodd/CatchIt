@@ -84,6 +84,7 @@ class DepartureAlarmWorker(
         fun schedule(context: Context) {
             // Wake device immediately with AlarmManager to bypass JobScheduler Doze latency
             DepartureAlarmScheduler.schedule(context, delayMs = 0L)
+            DepartureAlarmService.start(context)
 
             val request = OneTimeWorkRequestBuilder<DepartureAlarmWorker>()
                 .setInitialDelay(0, TimeUnit.SECONDS)
@@ -104,6 +105,7 @@ class DepartureAlarmWorker(
         /** Stops the alarm check loop. */
         fun cancel(context: Context) {
             DepartureAlarmScheduler.cancel(context)
+            DepartureAlarmService.stop(context)
             WorkManager.getInstance(context.applicationContext).cancelUniqueWork(UNIQUE_NAME)
         }
 

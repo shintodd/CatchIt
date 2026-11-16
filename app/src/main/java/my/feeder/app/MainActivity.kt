@@ -96,6 +96,13 @@ class MainActivity : ComponentActivity() {
         GtfsRepository.initAlarms(this)
         ServiceAlertsRepository.init(this)
 
+        // Force background auto-start if alarms are armed
+        try {
+            if (DepartureAlarmStore.load().isNotEmpty()) {
+                DepartureAlarmWorker.schedule(this)
+            }
+        } catch (_: Exception) {}
+
         setContent {
             CatchItTheme {
                 Surface(

@@ -31,7 +31,13 @@ object DepartureAlarmScheduler {
 
         val triggerAt = SystemClock.elapsedRealtime() + delayMs
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
             } else {
                 am.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
@@ -49,6 +55,7 @@ object DepartureAlarmScheduler {
     }
 
     fun cancel(context: Context) {
+        DepartureAlarmService.stop(context)
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val intent = Intent(context, DepartureAlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
