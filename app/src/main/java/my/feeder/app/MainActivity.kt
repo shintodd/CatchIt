@@ -236,8 +236,7 @@ fun FeederAppNavigation() {
     val context = LocalContext.current
     val navController = rememberNavController()
 
-    val isEmu = remember { isEmulatorDevice() }
-    var showSplash by remember { mutableStateOf(!isEmu) }
+    var showSplash by remember { mutableStateOf(true) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -252,7 +251,7 @@ fun FeederAppNavigation() {
                 ServiceAlertsRepository.init(context)
                 launch { GtfsRepository.refreshLiveBuses() }
                 launch { ServiceAlertsRepository.refresh() }
-                if (!isEmu) {
+                if (!isEmulatorDevice()) {
                     launch { my.feeder.app.data.AppUpdateManager.checkSilently(context) }
                 }
             }
