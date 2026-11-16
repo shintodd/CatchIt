@@ -84,7 +84,6 @@ class DepartureAlarmWorker(
         fun schedule(context: Context) {
             // Wake device immediately with AlarmManager to bypass JobScheduler Doze latency
             DepartureAlarmScheduler.schedule(context, delayMs = 0L)
-            DepartureAlarmService.start(context)
 
             try {
                 if (!WorkManager.isInitialized()) {

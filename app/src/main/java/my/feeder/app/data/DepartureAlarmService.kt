@@ -34,29 +34,18 @@ class DepartureAlarmService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val alarms = DepartureAlarmStore.load()
-        if (alarms.isEmpty()) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        val notification = buildForegroundNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-                } else {
-                    0
-                }
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-
-        startTrackingLoop()
-        return START_STICKY
+        try {
+            val nm = getSystemService(NotificationManager::class.java)
+            nm?.cancel(NOTIFICATION_ID)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+        } catch (_: Exception) {}
+        stopSelf()
+        return START_NOT_STICKY
     }
 
     private fun startTrackingLoop() {
@@ -141,20 +130,14 @@ class DepartureAlarmService : Service() {
         private const val CADENCE_MS = 30_000L
 
         fun start(context: Context) {
-            try {
-                val intent = Intent(context, DepartureAlarmService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
-                } else {
-                    context.startService(intent)
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Cannot start foreground service: ${e.message}")
-            }
+            // Keep background work silent: do not show a foreground notification.
+            stop(context)
         }
 
         fun stop(context: Context) {
             try {
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                nm?.cancel(NOTIFICATION_ID)
                 context.stopService(Intent(context, DepartureAlarmService::class.java))
             } catch (e: Exception) {
                 Log.w(TAG, "Cannot stop foreground service: ${e.message}")

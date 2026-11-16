@@ -51,11 +51,10 @@ class DepartureAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 2. On boot or update, immediately re-arm alarms and start foreground tracking
+                // 2. On boot or update, immediately re-arm alarms in background
                 if (isBootOrUpdate) {
                     DepartureAlarmScheduler.schedule(context, delayMs = 3000L)
                     DepartureAlarmWorker.schedule(context)
-                    DepartureAlarmService.start(context)
                     return@launch
                 }
 
@@ -80,7 +79,6 @@ class DepartureAlarmReceiver : BroadcastReceiver() {
                 val remaining = DepartureAlarmStore.load()
                 if (remaining.isNotEmpty()) {
                     DepartureAlarmScheduler.scheduleNext(context)
-                    DepartureAlarmService.start(context)
                 } else {
                     DepartureAlarmScheduler.cancel(context)
                     DepartureAlarmService.stop(context)

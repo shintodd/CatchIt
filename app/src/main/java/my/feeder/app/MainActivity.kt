@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.feeder.app.data.AlertScheduleManager
 import my.feeder.app.data.DepartureAlarmEngine
+import my.feeder.app.data.DepartureAlarmService
 import my.feeder.app.data.DepartureAlarmStore
 import my.feeder.app.data.DepartureAlarmWorker
 import my.feeder.app.data.GtfsRepository
@@ -97,6 +98,11 @@ class MainActivity : ComponentActivity() {
         GtfsRepository.initPins(this)
         GtfsRepository.initAlarms(this)
         ServiceAlertsRepository.init(this)
+
+        // Ensure no persistent foreground notification is shown
+        try {
+            DepartureAlarmService.stop(this)
+        } catch (_: Exception) {}
 
         // Force background auto-start if alarms are armed
         try {
