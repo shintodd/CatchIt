@@ -131,6 +131,7 @@ object PrasaranaKioskClient {
         // Special shuttles & BRT
         "S606" to "PAVBJ", "S501" to "MENARA PRASARANA", "S012" to "HLB2",
         "B100" to "100",
+        "CAT14" to "CT14",
         // Feeder loop variants
         "T4069" to "T406B", "T4001" to "T400B", "T5121" to "T512B"
     )
@@ -139,6 +140,7 @@ object PrasaranaKioskClient {
      * "T5070" -> "T507", "T1551" -> "T155", "T8520" -> "T852".
      * "U4200" -> "420", "U6000" -> "600", "B1000" -> "100".
      * "P0010" -> "PJ01", "S4070" -> "SA07", "T810B" -> "T810".
+     * "EB60" -> "EB60", "CT13" -> "CT13", "T713" -> "T713".
      * Strips operator prefixes, council mappings, and direction suffixes (digits or A/B).
      */
     internal fun stripDirectionSuffix(raw: String): String {
@@ -159,7 +161,7 @@ object PrasaranaKioskClient {
             code = code.substring(1)
         }
 
-        // 4. 4-digit numeric route with direction digit (e.g. 4200 -> 420, 7548 -> 754, 6000 -> 600)
+        // 4. 4-digit pure numeric route with direction digit (e.g. 4200 -> 420, 7548 -> 754, 6000 -> 600)
         if (code.length == 4 && code.all { it.isDigit() }) {
             code = code.dropLast(1)
         }
@@ -167,7 +169,12 @@ object PrasaranaKioskClient {
         else if (code.startsWith("T") && code.length == 5 && code.substring(1).all { it.isDigit() }) {
             code = code.dropLast(1)
         }
-        // 6. 5-character feeder route with letter direction suffix (e.g. T810B -> T810, T110A -> T110)
+        // 6. 5-character Smart Selangor route with direction digit (e.g. S4070 -> S407 -> SA07)
+        else if (code.startsWith("S") && code.length == 5 && code.substring(1).all { it.isDigit() }) {
+            val base = code.dropLast(1)
+            code = OPERATOR_ROUTE_MAP[base] ?: base
+        }
+        // 7. 5-character feeder route with letter direction suffix (e.g. T810B -> T810, T110A -> T110)
         else if (code.startsWith("T") && code.length == 5 && (code.endsWith("A") || code.endsWith("B")) && code.substring(1, 4).all { it.isDigit() }) {
             code = code.dropLast(1)
         }

@@ -94,6 +94,65 @@ async function fetchVehiclePositions(category = 'rapid-bus-mrtfeeder', forceRefr
 }
 
 /**
+ * Fetch live vehicle positions from Prasarana's official AVL REST API.
+ * 
+ * Endpoint: https://myrapidbus.prasarana.com.my/avl/api/avl/region/{region}
+ * Regions: 'rkl' (Klang Valley) | 'rpg' (Penang)
+ * 
+ * @param {'rkl' | 'rpg'} [region='rkl']
+ * @returns {Promise<Array<{id: string, plate: string, latitude: number, longitude: number, speedKmh: number, bearing: number, routeId: string, timestamp: number}>>}
+ */
+async function fetchPrasaranaAvl(region = 'rkl') {
+  const url = `https://myrapidbus.prasarana.com.my/avl/api/avl/region/${region}`;
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json, */*',
+      'Origin': 'https://myrapidbus.prasarana.com.my',
+      'Referer': 'https://myrapidbus.prasarana.com.my/kiosk',
+      'User-Agent': 'CatchIt/1.2.9 (Official Prasarana AVL REST)'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Prasarana AVL REST fetch failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const vehicles = [];
+
+  for (const v of data.vehicles || []) {
+    const lat = Number(v.latitude);
+    const lon = Number(v.longitude);
+    if (!lat || !lon || isNaN(lat) || isNaN(lon)) continue;
+
+    const rawRoute = (v.route || '').trim().toUpperCase();
+    let routeId = rawRoute;
+    if (routeId.length === 4 && /^\d+$/.test(routeId)) {
+      routeId = routeId.slice(0, 3);
+    } else if (routeId.length === 5 && routeId.startsWith('T') && /^\d+$/.test(routeId.slice(1))) {
+      routeId = routeId.slice(0, 4);
+    }
+
+    const gpsTime = v.dt_gps
+      ? Math.floor(new Date(v.dt_gps.replace(' ', 'T') + '+08:00').getTime() / 1000)
+      : Math.floor(Date.now() / 1000);
+
+    vehicles.push({
+      id: (v.bus_no || '').toString(),
+      plate: (v.bus_no || 'Unknown').toString(),
+      latitude: lat,
+      longitude: lon,
+      speedKmh: Math.max(0, Math.round(Number(v.speed) || 0)),
+      bearing: Math.round(Number(v.angle) || 0),
+      routeId,
+      timestamp: isNaN(gpsTime) ? Math.floor(Date.now() / 1000) : gpsTime
+    });
+  }
+
+  return vehicles;
+}
+
+/**
  * 4. Flexible Route Filter:
  * Filters by route code exact match, route digit inclusion (e.g. T507 / T5070),
  * or GPS bounding box.
@@ -150,6 +209,7 @@ function filterVehicles(vehicles, filterOptions = {}) {
 
 module.exports = {
   fetchVehiclePositions,
+  fetchPrasaranaAvl,
   filterVehicles,
   CACHE_TTL_MS
 };

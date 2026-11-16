@@ -29,7 +29,7 @@ CatchIt only makes **outbound requests** to fetch public information. These requ
 | Destination | What is fetched | Why |
 | --- | --- | --- |
 | `api.data.gov.my` (Government of Malaysia open data) | Live vehicle positions and the published timetable for RapidKL feeder buses | The timetable and one of the live bus-position feeds |
-| `rapidbus-socketio-avl.prasarana.com.my` (Prasarana RapidKL) | Live vehicle positions | The second live bus-position feed, used to cover routes the open-data feed omits |
+| `myrapidbus.prasarana.com.my` (Prasarana Official AVL REST API) | Live vehicle positions | The primary live bus-position feed, covering Klang Valley and Penang routes |
 | `myrapid.com.my` | Published service-alert notices | To show you disruption notices such as route diversions |
 | `jsdelivr` / `unpkg` map tile and library requests as shown on the live map | Map tiles and the map library | To draw the map |
 

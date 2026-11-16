@@ -97,7 +97,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 | Source | URL | Role |
 | --- | --- | --- |
-| Prasarana kiosk AVL (Socket.IO) | `https://rapidbus-socketio-avl.prasarana.com.my` | Primary live feed. Covers routes `data.gov.my` omits. |
+| Prasarana kiosk AVL (REST API) | `https://myrapidbus.prasarana.com.my/avl/api/avl/region/` | Primary live feed. Covers routes `data.gov.my` omits across Klang Valley and Penang. |
 | Government open data GTFS-RT | `https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana/?category=rapid-bus-mrtfeeder` | Fallback live feed. |
 | Static GTFS | `https://api.data.gov.my/gtfs-static/prasarana/?category=rapid-bus-mrtfeeder` | Baked into `app/src/main/assets/feeder_schedule.json` at build time — never fetched at runtime. |
 | Service alerts | `https://r.jina.ai/https://myrapid.com.my/pulse/service-alerts-on-pulse/` | Disruption notices. Cache-busted with a Unix-second `nc` parameter. |

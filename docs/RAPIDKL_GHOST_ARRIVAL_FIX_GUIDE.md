@@ -2,7 +2,7 @@
 
 > **Audience**: Hermes Agent / Android & Backend Engineers  
 > **Target Systems**: `feedermy-android` (`CatchIt`), `t507-bus-discord-bot` (`TodakBus`)  
-> **Telemetry Source**: RapidKL AVL Socket.IO (`rapidbus-socketio-avl.prasarana.com.my`) & GTFS-RT (`data.gov.my`)  
+> **Telemetry Source**: Prasarana AVL REST API (`myrapidbus.prasarana.com.my`) & GTFS-RT (`data.gov.my`)  
 > **Status**: Verified in Production & Fixed in Android Client
 
 ---

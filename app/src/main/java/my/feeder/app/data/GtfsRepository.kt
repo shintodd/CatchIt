@@ -425,11 +425,8 @@ object GtfsRepository {
     suspend fun refreshLiveBuses(): Boolean = withContext(Dispatchers.IO) {
         val mrtVehicles = GtfsRealtimeClient.fetchVehiclePositions("rapid-bus-mrtfeeder")
         val klVehicles = GtfsRealtimeClient.fetchVehiclePositions("rapid-bus-kl")
-        val gtfsVehicles = when {
-            mrtVehicles != null && klVehicles != null -> mrtVehicles + klVehicles
-            mrtVehicles != null -> mrtVehicles
-            else -> klVehicles
-        }
+        val penangVehicles = GtfsRealtimeClient.fetchVehiclePositions("rapid-bus-penang")
+        val gtfsVehicles = listOfNotNull(mrtVehicles, klVehicles, penangVehicles).flatten().ifEmpty { null }
         val kioskBuses = PrasaranaKioskClient.fetchAllBuses()
 
         if (gtfsVehicles == null && kioskBuses == null) {
