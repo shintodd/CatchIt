@@ -423,7 +423,13 @@ object GtfsRepository {
      * Returns true when at least one source produced data.
      */
     suspend fun refreshLiveBuses(): Boolean = withContext(Dispatchers.IO) {
-        val gtfsVehicles = GtfsRealtimeClient.fetchVehiclePositions()
+        val mrtVehicles = GtfsRealtimeClient.fetchVehiclePositions("rapid-bus-mrtfeeder")
+        val klVehicles = GtfsRealtimeClient.fetchVehiclePositions("rapid-bus-kl")
+        val gtfsVehicles = when {
+            mrtVehicles != null && klVehicles != null -> mrtVehicles + klVehicles
+            mrtVehicles != null -> mrtVehicles
+            else -> klVehicles
+        }
         val kioskBuses = PrasaranaKioskClient.fetchAllBuses()
 
         if (gtfsVehicles == null && kioskBuses == null) {
