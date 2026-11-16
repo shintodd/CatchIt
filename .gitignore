@@ -15,7 +15,8 @@ captures/
 # Local tooling
 local.properties
 .idea/
-e2e/node_modules/
+node_modules/
+**/node_modules/
 scratch/
 .gtfs_cache/
 
