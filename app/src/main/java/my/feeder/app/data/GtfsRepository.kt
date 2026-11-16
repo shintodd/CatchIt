@@ -711,9 +711,10 @@ object GtfsRepository {
     internal fun gpsAgeSeconds(gpsTimestamp: String, nowEpochSeconds: Long): Int {
         if (gpsTimestamp.isBlank()) return Int.MAX_VALUE
         return try {
+            val clean = gpsTimestamp.replace('T', ' ').take(19)
             val fmt = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
             fmt.timeZone = java.util.TimeZone.getTimeZone("Asia/Kuala_Lumpur")
-            val parsed = fmt.parse(gpsTimestamp) ?: return Int.MAX_VALUE
+            val parsed = fmt.parse(clean) ?: return Int.MAX_VALUE
             val age = nowEpochSeconds - (parsed.time / 1000L)
             age.coerceIn(0L, 86_400L).toInt()
         } catch (e: Exception) {
