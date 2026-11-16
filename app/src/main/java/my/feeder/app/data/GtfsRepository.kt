@@ -281,9 +281,9 @@ object GtfsRepository {
         if (_routes.value.isNotEmpty()) return@withContext
         try {
             val jsonString = try {
-                context.assets.open("gtfs_feeder_catalog.json").bufferedReader().use { it.readText() }
-            } catch (_: Exception) {
                 context.assets.open("nationwide_transit_catalog.json").bufferedReader().use { it.readText() }
+            } catch (_: Exception) {
+                context.assets.open("gtfs_feeder_catalog.json").bufferedReader().use { it.readText() }
             }
             val root = if (jsonString.trimStart().startsWith("{")) JSONObject(jsonString) else null
             val routesArray = root?.optJSONArray("routes") ?: if (root == null) JSONArray(jsonString) else JSONArray()

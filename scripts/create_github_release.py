@@ -16,20 +16,21 @@ def main():
     print(f'Uploading APK size: {apk_size} bytes')
 
     release_notes = (
-        "## CatchIt v1.2.9 🚌\n\n"
+        "## CatchIt v1.3.0 🚌\n\n"
         "Native real-time MRT feeder bus and transit tracker for Malaysia.\n\n"
-        "### What's New in v1.2.9\n"
-        "- **Dual Open API Ingestion**: CatchIt now ingests both `rapid-bus-mrtfeeder` and `rapid-bus-kl` GTFS-Realtime feeds concurrently alongside the AVL socket stream.\n"
-        "- **20s In-Memory Throttle Cache**: Eliminates HTTP 429 rate limit triggers from data.gov.my under rapid foreground/backgrounding.\n"
-        "- **Standalone GTFS-RT Service**: Added modular TypeScript/JavaScript service (`gtfsRealtimeService.ts`) for data.gov.my protobuf decoding, telemetry extraction, and flexible route/geo filtering.\n"
-        "- **Telemetry Accuracy**: Corrected speed and directional bearing conversion from live GTFS-RT vehicle positions.\n\n"
+        "### What's New in v1.3.0\n"
+        "- **Official Prasarana REST AVL Ingestion**: Upgraded live vehicle tracking from stale open data feeds directly to Prasarana's official Rapid KL & Rapid Penang AVL endpoints (`/avl/api/avl/region/rkl` and `rpg`), tracking over 700+ active buses live.\n"
+        "- **Background Autostart & Boot Guarantees**: App services automatically restart on device boot (`BOOT_COMPLETED`) and package updates (`MY_PACKAGE_REPLACED`), ensuring background tracking and alarms stay armed.\n"
+        "- **Heads-Up Update Notifications**: High-priority system Heads-Up notifications and prominent in-app alert cards when new releases are published.\n"
+        "- **Sub-50ms Catalog Cold Start**: Split catalog indexing for instantaneous cold startup on mobile devices.\n"
+        "- **Enhanced Route & Destination Search Engine**: Nationwide bus and destination query engine with robust restoration across configuration changes.\n\n"
         "### Installation\n"
-        "Download `CatchIt-v1.2.9.apk` below or update directly in-app."
+        "Download `CatchIt-v1.3.0.apk` below or update directly in-app."
     )
 
     release_payload = json.dumps({
-        'tag_name': 'v1.2.9',
-        'name': 'CatchIt v1.2.9',
+        'tag_name': 'v1.3.0',
+        'name': 'CatchIt v1.3.0',
         'body': release_notes,
         'draft': False,
         'prerelease': False
@@ -58,7 +59,7 @@ def main():
                 apk_bytes = f.read()
 
             upload_req = urllib.request.Request(
-                f'{upload_url}?name=CatchIt-v1.2.9.apk',
+                f'{upload_url}?name=CatchIt-v1.3.0.apk',
                 data=apk_bytes,
                 headers={
                     'Authorization': f'token {token}',

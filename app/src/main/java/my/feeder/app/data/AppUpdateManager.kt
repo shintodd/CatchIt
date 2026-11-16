@@ -85,6 +85,7 @@ object AppUpdateManager {
         if (update != null && isNewerVersion(update.versionName, BuildConfig.VERSION_NAME)) {
             _updateAvailable.value = update
             _updateStatus.value = UpdateStatus.Available(update)
+            AppUpdateNotifier.notifyUpdateAvailable(context, update)
             update
         } else {
             if (!silent) _updateStatus.value = UpdateStatus.UpToDate(BuildConfig.VERSION_NAME)
@@ -208,6 +209,7 @@ object AppUpdateManager {
                                 if (percent != lastReportedPercent) {
                                     lastReportedPercent = percent
                                     _updateStatus.value = UpdateStatus.Downloading(percent)
+                                    AppUpdateNotifier.notifyDownloadProgress(context, update, percent)
                                 }
                             }
                         }
@@ -216,6 +218,7 @@ object AppUpdateManager {
                 finalConn.disconnect()
 
                 _updateStatus.value = UpdateStatus.ReadyToInstall(update, targetFile)
+                AppUpdateNotifier.notifyReadyToInstall(context, update, targetFile)
 
                 // Launch package installer
                 installApk(context, targetFile)

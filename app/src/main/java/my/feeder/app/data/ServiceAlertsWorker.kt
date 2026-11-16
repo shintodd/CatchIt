@@ -46,6 +46,12 @@ class ServiceAlertsWorker(
             if (fresh.isNotEmpty()) {
                 ServiceAlertsNotifier.notifyNew(applicationContext, fresh)
             }
+
+            // Periodically check GitHub for new app updates and raise heads-up notification
+            try {
+                AppUpdateManager.checkForUpdates(applicationContext, silent = true)
+            } catch (_: Exception) {}
+
             Result.success()
         } catch (e: Exception) {
             // A failed poll is not a failure of the work: try again next tick.

@@ -140,7 +140,7 @@ fun HomeScreen(
         counts
     }
 
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
 
     val pinnedRoutes = remember(pinned, routes) {
         pinned.mapNotNull { code -> routes.find { it.code.equals(code, ignoreCase = true) } }
@@ -344,9 +344,9 @@ private fun HeroHeader(
         if (appUpdate != null) {
             val update = appUpdate!!
             Surface(
-                color = Color(0xFF1E3A8A).copy(alpha = 0.92f),
+                color = Color(0xFF1E3A8A).copy(alpha = 0.95f),
                 shape = RoundedCornerShape(Radius.md),
-                border = BorderStroke(1.dp, Color(0xFF60A5FA).copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, Color(0xFF60A5FA).copy(alpha = 0.8f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
@@ -354,7 +354,7 @@ private fun HeroHeader(
                     }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
@@ -373,13 +373,23 @@ private fun HeroHeader(
                     }
                     Spacer(modifier = Modifier.width(Spacing.md))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "UPDATE READY · v${update.versionName}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF93C5FD),
-                            letterSpacing = 0.5.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "HEADS UP",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF93C5FD),
+                                letterSpacing = 0.6.sp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "· New Update Available (v${update.versionName})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.hairline))
                         Text(
                             text = when (val s = updateStatus) {
                                 is UpdateStatus.Downloading -> "Downloading update: ${s.progressPercent}%"
@@ -486,6 +496,46 @@ private fun HeroHeader(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
+                    if (appUpdate != null) {
+                        val upd = appUpdate!!
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = Color(0xFF1E3A8A).copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(Spacing.md)) {
+                                Text(
+                                    text = "🚀 App Update v${upd.versionName} Available",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF2563EB)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Official Rapid KL / Penang AVL REST endpoints, background autostart & sub-50ms catalog loading.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(
+                                    onClick = {
+                                        showNoticeDialog = false
+                                        AppUpdateManager.downloadAndInstall(context, upd)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2563EB)
+                                    ),
+                                    shape = RoundedCornerShape(Radius.sm),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Download & Install v${upd.versionName}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    }
+
                     if (hasAlerts) {
                         Text(
                             text = "⚠️ Live Disruptions from Prasarana:",
