@@ -104,7 +104,7 @@ object PrasaranaKioskClient {
             setRequestProperty("Accept", "application/json, */*")
             setRequestProperty("Origin", "https://myrapidbus.prasarana.com.my")
             setRequestProperty("Referer", "https://myrapidbus.prasarana.com.my/kiosk")
-            setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 15) CatchIt/1.2.9")
+            setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 15) CatchIt/1.3.0")
         }
 
     /**

@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.delay
 import my.feeder.app.data.AppUpdateManager
@@ -91,9 +92,10 @@ internal fun matchStops(routes: List<GtfsRoute>, query: String): List<StopMatch>
             val isMatch = stop.name.contains(qClean, ignoreCase = true) ||
                 (qSlug.length >= 3 && stopSlug.contains(qSlug))
             if (!isMatch) continue
-            val existing = byName[stop.name]
-            byName[stop.name] = if (existing == null) {
-                StopMatch(stop.name, stop.code, listOf(route.code), listOf(route.headsign))
+            val baseStopName = stop.name.replace(Regex("\\s*\\(OPP\\.?\\)$", RegexOption.IGNORE_CASE), "").trim()
+            val existing = byName[baseStopName]
+            byName[baseStopName] = if (existing == null) {
+                StopMatch(baseStopName, stop.code, listOf(route.code), listOf(route.headsign))
             } else if (existing.routeCodes.none { it.equals(route.code, ignoreCase = true) }) {
                 existing.copy(
                     routeCodes = existing.routeCodes + route.code,
@@ -138,7 +140,7 @@ fun HomeScreen(
         counts
     }
 
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
 
     val pinnedRoutes = remember(pinned, routes) {
         pinned.mapNotNull { code -> routes.find { it.code.equals(code, ignoreCase = true) } }
@@ -282,7 +284,7 @@ private fun HeroHeader(
     onStationClick: () -> Unit = {},
     onOpenNotifications: () -> Unit = {}
 ) {
-    var showNoticeDialog by rememberSaveable { mutableStateOf(false) }
+    var showNoticeDialog by remember { mutableStateOf(false) }
     val serviceAlerts by ServiceAlertsRepository.alerts.collectAsState()
     val hasAlerts = serviceAlerts.isNotEmpty()
     val context = LocalContext.current
@@ -623,12 +625,17 @@ private fun RouteSearchBar(
     var destinationResults by remember { mutableStateOf<List<DestinationResult>>(emptyList()) }
     var isSearchingDestination by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(query, routes, nationwideStops) {
         val trimmed = query.trim()
-        if (trimmed.length >= 3) {
+        val isExactRoute = matches.any { it.code.equals(trimmed, ignoreCase = true) }
+        if (trimmed.length >= 3 && !isExactRoute) {
             isSearchingDestination = true
-            delay(200)
+            delay(300)
+            if (GtfsRepository.nationwideStops.value.isEmpty()) {
+                GtfsRepository.loadNationwideCatalog(context)
+            }
             val res = DestinationSearchEngine.searchDestinations(
                 query = trimmed,
                 routes = routes,
@@ -679,7 +686,7 @@ private fun RouteSearchBar(
                 .fillMaxWidth()
                 .testTag("search")
                 .onFocusChanged { focus ->
-                    if (focus.isFocused) expanded = true
+                    if (focus.isFocused && query.isNotBlank()) expanded = true
                     else if (query.isBlank()) expanded = false
                 },
             shape = RoundedCornerShape(Radius.xl),
@@ -693,7 +700,7 @@ private fun RouteSearchBar(
         )
 
         AnimatedVisibility(
-            visible = expanded,
+            visible = expanded && query.isNotBlank(),
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
@@ -729,8 +736,24 @@ private fun RouteSearchBar(
                                     route = r,
                                     liveCount = liveCounts[r.code.uppercase()] ?: 0,
                                     onClick = {
+                                        focusManager.clearFocus()
                                         expanded = false
                                         onRouteSelected(r.code)
+                                    }
+                                )
+                            }
+                        }
+                        if (stopMatches.isNotEmpty()) {
+                            SectionLabel("Stops")
+                            stopMatches.take(40).forEach { stop ->
+                                StopSearchResultRow(
+                                    stop = stop,
+                                    schedules = schedules,
+                                    liveCounts = liveCounts,
+                                    onClick = { code ->
+                                        focusManager.clearFocus()
+                                        expanded = false
+                                        onRouteSelected(code)
                                     }
                                 )
                             }
@@ -741,6 +764,7 @@ private fun RouteSearchBar(
                                 NationwideRouteRow(
                                     route = nr,
                                     onClick = {
+                                        focusManager.clearFocus()
                                         expanded = false
                                         onRouteSelected(nr.code)
                                     }
@@ -753,25 +777,12 @@ private fun RouteSearchBar(
                                 DestinationResultRow(
                                     destination = dest,
                                     onClickRoute = { code ->
+                                        focusManager.clearFocus()
                                         expanded = false
                                         onRouteSelected(code)
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(Spacing.xs))
-                            }
-                        }
-                        if (stopMatches.isNotEmpty()) {
-                            SectionLabel("Stops")
-                            stopMatches.take(40).forEach { stop ->
-                                StopSearchResultRow(
-                                    stop = stop,
-                                    schedules = schedules,
-                                    liveCounts = liveCounts,
-                                    onClick = { code ->
-                                        expanded = false
-                                        onRouteSelected(code)
-                                    }
-                                )
                             }
                         }
                     }
@@ -912,7 +923,7 @@ private fun NationwideRouteRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("search-result-${route.code}")
+            .testTag("nationwide-result-${route.code}")
             .clickable { onClick() }
             .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically
@@ -1035,17 +1046,30 @@ private fun StopSearchResultRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = buildString {
-                    append(codes)
-                    if (more > 0) append(" +$more")
-                    if (direction.isNotEmpty()) append("  →  ").append(direction)
-                },
-                fontSize = TypeSize.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = codes,
+                    fontSize = TypeSize.caption,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (more > 0) {
+                    Text(
+                        text = " +$more",
+                        fontSize = TypeSize.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (direction.isNotEmpty()) {
+                    Text(
+                        text = "  →  $direction",
+                        fontSize = TypeSize.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
         if (next != null) {
             Spacer(modifier = Modifier.width(Spacing.sm))

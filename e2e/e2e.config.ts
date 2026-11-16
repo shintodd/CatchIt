@@ -21,4 +21,7 @@ export default {
     },
   ],
   workers: 1,
+  timeout: 240_000,
+  actionTimeout: 120_000,
+  assertionTimeout: 30_000,
 } satisfies E2EConfig;

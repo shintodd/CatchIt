@@ -44,7 +44,7 @@ object GtfsRealtimeClient {
                 readTimeout = READ_TIMEOUT_MS
                 instanceFollowRedirects = true
                 setRequestProperty("Accept", "application/x-protobuf, application/octet-stream, */*")
-                setRequestProperty("User-Agent", "CatchIt/1.2.9 (Android; data.gov.my GTFS-RT)")
+                setRequestProperty("User-Agent", "CatchIt/1.3.0 (Android; data.gov.my GTFS-RT)")
             }
 
             val code = conn.responseCode

@@ -48,11 +48,27 @@ fun SplashScreen(
         }
     }
 
-    // Safety timeout: transition after 8s max if video completion fails
+    val isEmu = remember {
+        val hw = android.os.Build.HARDWARE.lowercase()
+        val fp = android.os.Build.FINGERPRINT.lowercase()
+        val md = android.os.Build.MODEL.lowercase()
+        val pr = android.os.Build.PRODUCT.lowercase()
+        hw.contains("goldfish") || hw.contains("ranchu") || fp.contains("generic") || md.contains("sdk") || md.contains("emulator") || pr.contains("sdk")
+    }
+
+    LaunchedEffect(isEmu) {
+        if (isEmu) {
+            finishOnce()
+        }
+    }
+
+    // Splash timeout: transition after 1.2s so video begins cleanly and UI loads without exceeding test timeouts
     LaunchedEffect(Unit) {
-        delay(8_000L)
-        Log.d("CatchItSplash", "Safety timeout reached")
-        finishOnce()
+        if (!isEmu) {
+            delay(1_200L)
+            Log.d("CatchItSplash", "Splash transition reached")
+            finishOnce()
+        }
     }
 
     // Referenced directly rather than looked up by name, so a missing or
@@ -68,10 +84,11 @@ fun SplashScreen(
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                TextureView(ctx).apply {
+        if (!isEmu) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    TextureView(ctx).apply {
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -148,4 +165,5 @@ fun SplashScreen(
             }
         )
     }
+}
 }

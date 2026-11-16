@@ -239,16 +239,15 @@ object ServiceAlertsRepository {
 
     private fun fetch(): String {
         val conn = URL(sourceUrl()).openConnection() as HttpURLConnection
-        conn.connectTimeout = 10_000
-        conn.readTimeout = 30_000
+        conn.connectTimeout = 4_000
+        conn.readTimeout = 6_000
         conn.instanceFollowRedirects = true
         conn.setRequestProperty("User-Agent", "CatchIt/1.0.4 (Android)")
         conn.setRequestProperty("Accept", "text/plain,*/*")
         // Ask the proxy for a fresh render of the origin page, not a cached one.
-        // Measured on this source: 21.7s served versus 3.1s served fresh.
         conn.setRequestProperty("X-No-Cache", "true")
         // Do not let the proxy spend longer than this rendering.
-        conn.setRequestProperty("X-Timeout", "30")
+        conn.setRequestProperty("X-Timeout", "5")
         return try {
             conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
         } finally {

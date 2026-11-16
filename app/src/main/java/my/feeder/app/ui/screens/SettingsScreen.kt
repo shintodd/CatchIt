@@ -108,13 +108,13 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(Spacing.md))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "2-Stage Bus Alerts",
+                            text = "How alarms work",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "1. Early alert when bus nears · 2. Alert at boarding stop.",
+                            text = "2-Stage Bus Alerts: 1. Early alert when bus nears · 2. Alert at boarding stop.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

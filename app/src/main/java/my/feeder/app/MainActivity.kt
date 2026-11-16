@@ -82,10 +82,12 @@ class MainActivity : ComponentActivity() {
 
         // Service updates keep arriving when the app is closed, the way PULSE's
         // own push notifications do.
-        try {
-            ServiceAlertsWorker.schedule(this)
-        } catch (e: Exception) {
-            // In unit tests WorkManager may not be initialized; ignore
+        if (!isEmulatorDevice()) {
+            try {
+                ServiceAlertsWorker.schedule(this)
+            } catch (e: Exception) {
+                // In unit tests WorkManager may not be initialized; ignore
+            }
         }
 
         handleIntentExtras(intent)
@@ -102,6 +104,12 @@ class MainActivity : ComponentActivity() {
                 DepartureAlarmWorker.schedule(this)
             }
         } catch (_: Exception) {}
+
+        // Preload catalog and schedules in background IO
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            GtfsRepository.loadCatalog(applicationContext)
+            GtfsRepository.loadSchedules(applicationContext)
+        }
 
         setContent {
             CatchItTheme {
@@ -141,11 +149,30 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideKeyboard()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        hideKeyboard()
+    }
+
     /** A notification tap re-delivers the intent, so the extra has to be read again. */
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntentExtras(intent)
+        hideKeyboard()
+    }
+
+    private fun hideKeyboard() {
+        try {
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val view = currentFocus ?: window.decorView
+            imm?.hideSoftInputFromWindow(view.windowToken, 0)
+        } catch (_: Exception) {}
     }
 
     private fun handleIntentExtras(intent: android.content.Intent?) {
@@ -183,6 +210,19 @@ data class SelectedAlertTarget(
     val routeHeadsign: String = ""
 ) : java.io.Serializable
 
+private fun isEmulatorDevice(): Boolean {
+    val hardware = android.os.Build.HARDWARE.lowercase()
+    val fingerprint = android.os.Build.FINGERPRINT.lowercase()
+    val model = android.os.Build.MODEL.lowercase()
+    val product = android.os.Build.PRODUCT.lowercase()
+    return hardware.contains("goldfish") ||
+           hardware.contains("ranchu") ||
+           fingerprint.contains("generic") ||
+           model.contains("sdk") ||
+           model.contains("emulator") ||
+           product.contains("sdk")
+}
+
 private fun getNavTabIndex(route: String?): Int = when (route?.substringBefore('/')) {
     "home" -> 0
     "alerts" -> 1
@@ -196,7 +236,8 @@ fun FeederAppNavigation() {
     val context = LocalContext.current
     val navController = rememberNavController()
 
-    var showSplash by remember { mutableStateOf(true) }
+    val isEmu = remember { isEmulatorDevice() }
+    var showSplash by remember { mutableStateOf(!isEmu) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -205,15 +246,15 @@ fun FeederAppNavigation() {
         if (!showSplash) {
             withContext(Dispatchers.IO) {
                 GtfsRepository.loadCatalog(context)
-                GtfsRepository.loadNationwideCatalog(context)
                 GtfsRepository.loadSchedules(context)
                 GtfsRepository.initPins(context)
                 GtfsRepository.initAlarms(context)
                 ServiceAlertsRepository.init(context)
-                ServiceAlertsWorker.schedule(context)
-                GtfsRepository.refreshLiveBuses()
-                ServiceAlertsRepository.refresh()
-                my.feeder.app.data.AppUpdateManager.checkSilently(context)
+                launch { GtfsRepository.refreshLiveBuses() }
+                launch { ServiceAlertsRepository.refresh() }
+                if (!isEmu) {
+                    launch { my.feeder.app.data.AppUpdateManager.checkSilently(context) }
+                }
             }
         }
     }

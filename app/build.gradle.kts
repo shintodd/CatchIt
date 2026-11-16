@@ -15,8 +15,8 @@ android {
         applicationId = "my.feeder.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.2.9"
+        versionCode = 17
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

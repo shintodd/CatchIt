@@ -278,19 +278,15 @@ object GtfsRepository {
     }
 
     suspend fun loadCatalog(context: Context) = withContext(Dispatchers.IO) {
-        if (_routes.value.isNotEmpty() && _routes.value.size >= 400) return@withContext
+        if (_routes.value.isNotEmpty()) return@withContext
         try {
-            val assetName = if (context.assets.list("")?.contains("nationwide_transit_catalog.json") == true) {
-                "nationwide_transit_catalog.json"
-            } else {
-                "gtfs_feeder_catalog.json"
+            val jsonString = try {
+                context.assets.open("gtfs_feeder_catalog.json").bufferedReader().use { it.readText() }
+            } catch (_: Exception) {
+                context.assets.open("nationwide_transit_catalog.json").bufferedReader().use { it.readText() }
             }
-            val jsonString = context.assets.open(assetName).bufferedReader().use { it.readText() }
-            val routesArray = if (jsonString.trimStart().startsWith("{")) {
-                JSONObject(jsonString).optJSONArray("routes") ?: JSONArray()
-            } else {
-                JSONArray(jsonString)
-            }
+            val root = if (jsonString.trimStart().startsWith("{")) JSONObject(jsonString) else null
+            val routesArray = root?.optJSONArray("routes") ?: if (root == null) JSONArray(jsonString) else JSONArray()
             val parsedRoutes = ArrayList<GtfsRoute>(routesArray.length())
 
             for (i in 0 until routesArray.length()) {
@@ -363,17 +359,73 @@ object GtfsRepository {
             val root = JSONObject(jsonString)
 
             val routesArr = root.optJSONArray("routes")
-            val parsedRoutes = ArrayList<NationwideRoute>(routesArr?.length() ?: 0)
+            val parsedNationwideRoutes = ArrayList<NationwideRoute>(routesArr?.length() ?: 0)
+            val additionalRoutes = ArrayList<GtfsRoute>()
+            val existingCodes = _routes.value.map { it.code.uppercase() }.toHashSet()
+
             if (routesArr != null) {
                 for (i in 0 until routesArr.length()) {
                     val rObj = routesArr.getJSONObject(i)
-                    parsedRoutes.add(
+                    val code = rObj.getString("code")
+                    val rawHeadsign = rObj.optString("headsign", "")
+                    val rawName = rObj.optString("name", "")
+                    val resolvedHeadsign = if (rawHeadsign.isNotBlank() && !rawHeadsign.equals(code, ignoreCase = true)) {
+                        rawHeadsign
+                    } else if (rawName.isNotBlank() && !rawName.equals(code, ignoreCase = true)) {
+                        rawName
+                    } else {
+                        rawHeadsign.ifBlank { rawName.ifBlank { "Bus Route" } }
+                    }
+                    val agency = rObj.optString("agency", "RapidKL")
+
+                    parsedNationwideRoutes.add(
                         NationwideRoute(
-                            code = rObj.getString("code"),
-                            name = rObj.optString("name", ""),
-                            agency = rObj.optString("agency", "")
+                            code = code,
+                            name = rawName.ifBlank { resolvedHeadsign },
+                            agency = agency
                         )
                     )
+
+                    if (!existingCodes.contains(code.uppercase())) {
+                        existingCodes.add(code.uppercase())
+                        val stopsArr = rObj.optJSONArray("stops")
+                        val stopsList = ArrayList<GtfsStop>(stopsArr?.length() ?: 0)
+                        if (stopsArr != null) {
+                            for (s in 0 until stopsArr.length()) {
+                                val sObj = stopsArr.getJSONObject(s)
+                                stopsList.add(
+                                    GtfsStop(
+                                        id = sObj.getString("id"),
+                                        code = sObj.optString("code", ""),
+                                        name = sObj.optString("name", "Stop"),
+                                        lat = sObj.optDouble("lat", 0.0),
+                                        lon = sObj.optDouble("lon", 0.0),
+                                        seq = sObj.optInt("seq", s + 1)
+                                    )
+                                )
+                            }
+                        }
+                        val shapeArr = rObj.optJSONArray("shape")
+                        val shapeList = ArrayList<Pair<Double, Double>>(shapeArr?.length() ?: 0)
+                        if (shapeArr != null) {
+                            for (sp in 0 until shapeArr.length()) {
+                                val ptArr = shapeArr.getJSONArray(sp)
+                                shapeList.add(Pair(ptArr.getDouble(0), ptArr.getDouble(1)))
+                            }
+                        }
+                        additionalRoutes.add(
+                            GtfsRoute(
+                                id = rObj.getString("id"),
+                                code = code,
+                                headsign = resolvedHeadsign,
+                                stopsCount = stopsList.size,
+                                stops = stopsList,
+                                shape = shapeList,
+                                agency = agency,
+                                name = rawName.ifBlank { resolvedHeadsign }
+                            )
+                        )
+                    }
                 }
             }
 
@@ -401,11 +453,10 @@ object GtfsRepository {
                 }
             }
 
-            _nationwideRoutes.value = parsedRoutes
-            _nationwideStops.value = parsedStops
-
-            if (_routes.value.isEmpty() || _routes.value.size < parsedRoutes.size) {
-                loadCatalog(context)
+            if (parsedNationwideRoutes.isNotEmpty()) _nationwideRoutes.value = parsedNationwideRoutes
+            if (parsedStops.isNotEmpty()) _nationwideStops.value = parsedStops
+            if (additionalRoutes.isNotEmpty()) {
+                _routes.value = _routes.value + additionalRoutes
             }
         } catch (e: Exception) {
             e.printStackTrace()

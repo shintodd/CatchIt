@@ -477,9 +477,9 @@ object DestinationSearchEngine {
         context: Context? = null,
         limit: Int = 3,
         maxRadiusMeters: Int = 800
-    ): List<DestinationResult> {
+    ): List<DestinationResult> = withContext(Dispatchers.Default) {
         val trimmed = query.trim()
-        if (trimmed.isBlank()) return emptyList()
+        if (trimmed.isBlank()) return@withContext emptyList()
 
         val candidateStops = ArrayList<StopCandidate>(routes.size * 15 + nationwideStops.size)
         for (r in routes) {
@@ -492,7 +492,7 @@ object DestinationSearchEngine {
         val places = resolveDestinations(trimmed, candidateStops, context, limit)
         if (places.isEmpty()) {
             val single = searchDestination(trimmed, routes, nationwideStops, context, maxRadiusMeters)
-            return if (single != null) listOf(single) else emptyList()
+            return@withContext if (single != null) listOf(single) else emptyList()
         }
 
         val mapped = places.mapNotNull { place ->
@@ -543,7 +543,7 @@ object DestinationSearchEngine {
         }
 
         val withStops = mapped.filter { it.nearestStops.isNotEmpty() }
-        return if (withStops.isNotEmpty()) withStops else mapped.take(1)
+        if (withStops.isNotEmpty()) withStops else mapped.take(1)
     }
 
     /**

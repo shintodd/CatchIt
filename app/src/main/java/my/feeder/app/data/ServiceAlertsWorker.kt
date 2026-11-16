@@ -40,7 +40,9 @@ class ServiceAlertsWorker(
         try {
             // The worker has no collector on the repository's new-alert flow,
             // so it raises the notifications itself.
-            val fresh = ServiceAlertsRepository.refreshBlocking()
+            val fresh = kotlinx.coroutines.withTimeoutOrNull(6_000L) {
+                ServiceAlertsRepository.refreshBlocking()
+            } ?: emptyList()
             if (fresh.isNotEmpty()) {
                 ServiceAlertsNotifier.notifyNew(applicationContext, fresh)
             }
@@ -56,6 +58,15 @@ class ServiceAlertsWorker(
 
         /** Starts the background poll. Safe to call repeatedly. */
         fun schedule(context: Context) {
+            try {
+                if (!WorkManager.isInitialized()) {
+                    WorkManager.initialize(
+                        context.applicationContext,
+                        androidx.work.Configuration.Builder().build()
+                    )
+                }
+            } catch (_: Exception) {}
+
             val request = PeriodicWorkRequestBuilder<ServiceAlertsWorker>(
                 15, TimeUnit.MINUTES
             )

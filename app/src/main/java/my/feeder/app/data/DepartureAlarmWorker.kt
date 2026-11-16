@@ -86,6 +86,15 @@ class DepartureAlarmWorker(
             DepartureAlarmScheduler.schedule(context, delayMs = 0L)
             DepartureAlarmService.start(context)
 
+            try {
+                if (!WorkManager.isInitialized()) {
+                    WorkManager.initialize(
+                        context.applicationContext,
+                        androidx.work.Configuration.Builder().build()
+                    )
+                }
+            } catch (_: Exception) {}
+
             val request = OneTimeWorkRequestBuilder<DepartureAlarmWorker>()
                 .setInitialDelay(0, TimeUnit.SECONDS)
                 .setConstraints(
