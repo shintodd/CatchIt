@@ -7,6 +7,7 @@ import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideIcon
 import my.feeder.app.ui.components.StaggeredRow
 import my.feeder.app.ui.components.pressScale
+import my.feeder.app.data.ThemeManager
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -498,10 +499,16 @@ private fun HeroHeader(
                 ) {
                     if (appUpdate != null) {
                         val upd = appUpdate!!
+                        val isDark = ThemeManager.isDarkActive()
+                        val infoCardBg = if (isDark) Color(0xFF132338) else Color(0xFFEFF6FF)
+                        val infoBorderColor = if (isDark) Color(0xFF1E40AF) else Color(0xFFBFDBFE)
+                        val infoTitleColor = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)
+                        val infoBtnColor = if (isDark) Color(0xFF2563EB) else Color(0xFF1D4ED8)
+
                         Surface(
                             shape = RoundedCornerShape(Radius.sm),
-                            color = Color(0xFF1E3A8A).copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f)),
+                            color = infoCardBg,
+                            border = BorderStroke(1.dp, infoBorderColor),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(Spacing.md)) {
@@ -509,7 +516,7 @@ private fun HeroHeader(
                                     text = "🚀 App Update v${upd.versionName} Available",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
-                                    color = Color(0xFF2563EB)
+                                    color = infoTitleColor
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -524,7 +531,7 @@ private fun HeroHeader(
                                         AppUpdateManager.downloadAndInstall(context, upd)
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2563EB)
+                                        containerColor = infoBtnColor
                                     ),
                                     shape = RoundedCornerShape(Radius.sm),
                                     modifier = Modifier.fillMaxWidth()
@@ -957,7 +964,7 @@ private fun DestinationResultRow(
                 Text(
                     text = "No feeder bus routes within walking distance (800m)",
                     fontSize = TypeSize.caption,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -1004,7 +1011,7 @@ private fun NationwideRouteRow(
                 Text(
                     text = route.name,
                     fontSize = TypeSize.caption,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1049,7 +1056,7 @@ private fun SearchResultRow(
                 text = if (liveCount == 1) "1 live" else "$liveCount live",
                 fontSize = TypeSize.caption,
                 fontWeight = FontWeight.Bold,
-                color = TelemetryLiveLight,
+                color = telemetryLiveColor(),
                 style = TabularNums
             )
         }
@@ -1127,7 +1134,7 @@ private fun StopSearchResultRow(
                 text = next,
                 fontSize = TypeSize.caption,
                 fontWeight = FontWeight.Bold,
-                color = TelemetryLiveLight,
+                color = telemetryLiveColor(),
                 style = TabularNums
             )
         } else if (live > 0) {
@@ -1136,7 +1143,7 @@ private fun StopSearchResultRow(
                 text = if (live == 1) "1 live" else "$live live",
                 fontSize = TypeSize.caption,
                 fontWeight = FontWeight.Bold,
-                color = TelemetryLiveLight,
+                color = telemetryLiveColor(),
                 style = TabularNums
             )
         }
@@ -1221,7 +1228,7 @@ private fun PinnedRouteCard(
                     text = next,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
-                    color = AccentOnContainer,
+                    color = accentColor(),
                     style = TabularNums
                 )
             } else {
@@ -1237,7 +1244,7 @@ private fun PinnedRouteCard(
                     text = if (liveCount == 1) "1 live now" else "$liveCount live now",
                     fontSize = TypeSize.caption,
                     fontWeight = FontWeight.Bold,
-                    color = TelemetryLiveLight
+                    color = telemetryLiveColor()
                 )
             }
         }
@@ -1312,7 +1319,7 @@ private fun RouteRow(
                             else -> "Service ended"
                         },
                         fontSize = TypeSize.caption,
-                        color = if (liveCount > 0) TelemetryLiveLight
+                        color = if (liveCount > 0) telemetryLiveColor()
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (liveCount > 0) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
@@ -1329,7 +1336,7 @@ private fun RouteRow(
                         text = next,
                         fontSize = TypeSize.title,
                         fontWeight = FontWeight.Black,
-                        color = AccentOnContainer,
+                        color = accentColor(),
                         style = TabularNums
                     )
                 }

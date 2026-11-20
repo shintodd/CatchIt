@@ -38,7 +38,7 @@ import my.feeder.app.ui.theme.Motion
 import my.feeder.app.ui.theme.Radius
 import my.feeder.app.ui.theme.Spacing
 import my.feeder.app.ui.theme.TabularNums
-import my.feeder.app.ui.theme.TelemetryDelayedLight
+import my.feeder.app.ui.theme.telemetryDelayedColor
 import my.feeder.app.ui.theme.TypeSize
 
 /** Unwraps the Activity behind a Compose context, if there is one. */
@@ -285,7 +285,7 @@ fun NotificationsScreen(
                 Text(
                     text = freshness,
                     fontSize = TypeSize.caption,
-                    color = if (stale) TelemetryDelayedLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (stale) telemetryDelayedColor() else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = Spacing.lg, top = Spacing.xs)
                 )
             }

@@ -27,6 +27,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import my.feeder.app.R
+import my.feeder.app.data.ThemeManager
 import my.feeder.app.ui.theme.*
 
 private data class CommutePreset(
@@ -79,7 +80,7 @@ fun CatchItTimePickerContent(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = ThemeManager.isDarkActive()
 
     // Dynamic contrast-optimized palette for dark & light mode
     val dialogBg = if (isDark) Color(0xFF161817) else Color(0xFFFFFFFF)

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.GtfsStop
 import my.feeder.app.data.LiveBusState
+import my.feeder.app.data.ThemeManager
 import my.feeder.app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -325,8 +326,8 @@ private fun NextBusStrip(
                         fontWeight = FontWeight.Bold,
                         color = when {
                             nextBus.isAtTerminal -> MaterialTheme.colorScheme.onSurfaceVariant
-                            nextBus.speedKmh < 3 -> TelemetryDelayedLight
-                            else -> TelemetryLiveLight
+                            nextBus.speedKmh < 3 -> telemetryDelayedColor()
+                            else -> telemetryLiveColor()
                         },
                         style = TabularNums
                     )
@@ -346,7 +347,9 @@ private fun NextBusStrip(
 
             // The main figure on this screen — largest text in the strip.
             Surface(
-                color = if (isArmed) Color(0x334ADE80) else AccentContainer,
+                color = if (isArmed) {
+                    if (ThemeManager.isDarkActive()) Color(0x334ADE80) else Color(0x1F15803D)
+                } else accentContainerColor(),
                 shape = RoundedCornerShape(Radius.md)
             ) {
                 Text(
@@ -357,7 +360,7 @@ private fun NextBusStrip(
                     },
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Black,
-                    color = if (isArmed) Color(0xFF15803D) else AccentOnContainer,
+                    color = if (isArmed) telemetryLiveColor() else accentOnContainerColor(),
                     modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
                     style = TabularNums
                 )
@@ -441,14 +444,14 @@ private fun RouteStopsSheet(
                         upcoming.forEachIndexed { i, t ->
                             Surface(
                                 shape = RoundedCornerShape(Radius.sm),
-                                color = if (i == 0) AccentContainer
+                                color = if (i == 0) accentContainerColor()
                                 else MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(
                                     text = t,
                                     fontSize = TypeSize.body,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (i == 0) AccentOnContainer
+                                    color = if (i == 0) accentOnContainerColor()
                                     else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 6.dp),
                                     style = TabularNums
@@ -599,8 +602,8 @@ private fun RouteStopsSheet(
 
                             Surface(
                                 color = when {
-                                    isNext -> Color(0x334ADE80)
-                                    eta != null -> MaterialTheme.colorScheme.surface
+                                    isNext -> if (ThemeManager.isDarkActive()) Color(0x334ADE80) else Color(0x1F15803D)
+                                    eta != null -> accentContainerColor()
                                     else -> MaterialTheme.colorScheme.surfaceVariant
                                 },
                                 shape = RoundedCornerShape(Radius.sm)
@@ -614,8 +617,8 @@ private fun RouteStopsSheet(
                                     fontSize = TypeSize.caption,
                                     fontWeight = FontWeight.Bold,
                                     color = when {
-                                        isNext -> Color(0xFF15803D)
-                                        eta != null -> AccentOnContainer
+                                        isNext -> telemetryLiveColor()
+                                        eta != null -> accentOnContainerColor()
                                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                                     },
                                     modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 6.dp),

@@ -231,7 +231,7 @@ fun TwoStageAlertSheet(
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(Radius.md),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TelemetryStaleLight)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = telemetryStaleColor())
             ) {
                 Text(text = "Turn alarm off", fontSize = TypeSize.body, fontWeight = FontWeight.Bold)
             }

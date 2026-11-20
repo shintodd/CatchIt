@@ -6,6 +6,7 @@ import android.net.Uri
 import my.feeder.app.ui.components.MaxWidthContainer
 import my.feeder.app.ui.components.LucideAnimatedBell
 import my.feeder.app.ui.components.LucideIcon
+import my.feeder.app.data.ThemeManager
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -277,7 +278,7 @@ fun AlertsScreen(
                             Text(
                                 text = "May be out of date",
                                 fontSize = TypeSize.caption,
-                                color = TelemetryDelayedLight
+                                color = telemetryDelayedColor()
                             )
                         }
                     }
@@ -640,7 +641,7 @@ private fun AlertRow(
                         },
                         fontSize = TypeSize.caption,
                         color = if (liveBus == null) MaterialTheme.colorScheme.onSurfaceVariant
-                        else if (isMoving) TelemetryLiveLight else TelemetryDelayedLight,
+                        else if (isMoving) telemetryLiveColor() else telemetryDelayedColor(),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -679,9 +680,10 @@ private fun AlertRow(
 
 @Composable
 private fun StageChip(label: String, stop: String, active: Boolean) {
+    val isDark = ThemeManager.isDarkActive()
     Surface(
         shape = RoundedCornerShape(Radius.sm),
-        color = if (active) Color(0x334ADE80)
+        color = if (active) (if (isDark) Color(0x334ADE80) else Color(0x1F15803D))
         else MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
@@ -692,7 +694,7 @@ private fun StageChip(label: String, stop: String, active: Boolean) {
                 text = "$label · $stop",
                 fontSize = TypeSize.caption,
                 fontWeight = FontWeight.Bold,
-                color = if (active) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (active) telemetryLiveColor() else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )

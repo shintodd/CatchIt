@@ -50,6 +50,14 @@ val TelemetryDelayedDark  = Color(0xFFFBBF24)
 val TelemetryStaleLight   = Color(0xFFB91C1C)
 val TelemetryStaleDark    = Color(0xFFF87171)
 
+// Accent Amber Tokens (WCAG AAA & M3 Dark-Mode Compliant)
+val AccentLight            = Color(0xFFF59E0B)
+val AccentDark             = Color(0xFFFCD34D)
+val AccentContainerLight   = Color(0xFFFEF3C7)
+val AccentContainerDark    = Color(0xFF38230A)
+val AccentOnContainerLight = Color(0xFF7C5800)
+val AccentOnContainerDark  = Color(0xFFFDE68A)
+
 // Backward Compatibility Aliases
 val PulseBg = LightCanvasBg
 val PulseSurface = LightCardSurface
@@ -96,3 +104,15 @@ fun telemetryDelayedColor(): Color =
 @Composable
 fun telemetryStaleColor(): Color =
     if (ThemeManager.isDarkActive()) TelemetryStaleDark else TelemetryStaleLight
+
+@Composable
+fun accentColor(): Color =
+    if (ThemeManager.isDarkActive()) AccentDark else AccentLight
+
+@Composable
+fun accentContainerColor(): Color =
+    if (ThemeManager.isDarkActive()) AccentContainerDark else AccentContainerLight
+
+@Composable
+fun accentOnContainerColor(): Color =
+    if (ThemeManager.isDarkActive()) AccentOnContainerDark else AccentOnContainerLight

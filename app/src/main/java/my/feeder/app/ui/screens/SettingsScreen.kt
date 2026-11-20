@@ -669,7 +669,7 @@ fun SettingsScreen(
                         onClick = { showResetDialog = true },
                         modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp),
                         shape = RoundedCornerShape(Radius.md),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TelemetryStaleLight)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = telemetryStaleColor())
                     ) {
                         Text("Reset & Erase All Local Data", fontSize = TypeSize.caption, fontWeight = FontWeight.SemiBold)
                     }
@@ -702,7 +702,7 @@ fun SettingsScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("Erase", color = TelemetryStaleLight, fontWeight = FontWeight.Bold)
+                    Text("Erase", color = telemetryStaleColor(), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
