@@ -28,6 +28,12 @@ class DepartureAlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "onReceive action=$action isBootOrUpdate=$isBootOrUpdate")
 
         val pendingResult = goAsync()
+        val pm = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+        val wakeLock = pm?.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "CatchIt:DepartureAlarmWakeLock")
+        try {
+            wakeLock?.acquire(25_000L) // 25s max safety hold
+        } catch (_: Exception) {}
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 DepartureAlarmStore.init(context)
@@ -58,13 +64,7 @@ class DepartureAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 3. Regular alarm tick
-                // If outside active commute window, reschedule for later without polling network
-                if (!AlertScheduleManager.isWithinActiveWindow()) {
-                    DepartureAlarmScheduler.schedule(context, 60_000L)
-                    return@launch
-                }
-
+                // 3. Regular alarm tick: refresh fleet and evaluate explicitly armed alarms
                 GtfsRepository.loadCatalog(context)
                 GtfsRepository.refreshLiveBuses()
 
@@ -89,6 +89,11 @@ class DepartureAlarmReceiver : BroadcastReceiver() {
                     DepartureAlarmScheduler.scheduleNext(context)
                 }
             } finally {
+                try {
+                    if (wakeLock?.isHeld == true) {
+                        wakeLock.release()
+                    }
+                } catch (_: Exception) {}
                 pendingResult.finish()
             }
         }

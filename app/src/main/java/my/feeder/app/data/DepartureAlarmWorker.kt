@@ -36,12 +36,8 @@ class DepartureAlarmWorker(
             DepartureAlarmStore.init(applicationContext)
             AlertScheduleManager.init(applicationContext)
 
-            // Outside active commute window: skip heavy GTFS download to conserve battery,
-            // but keep next check scheduled while alarms remain armed.
-            if (!AlertScheduleManager.isWithinActiveWindow()) {
-                if (DepartureAlarmStore.load().isNotEmpty()) {
-                    scheduleNext(applicationContext)
-                }
+            val alarms = DepartureAlarmStore.load()
+            if (alarms.isEmpty()) {
                 return@withContext Result.success()
             }
 

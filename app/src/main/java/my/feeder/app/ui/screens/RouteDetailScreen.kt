@@ -30,6 +30,8 @@ import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.GtfsStop
 import my.feeder.app.data.LiveBusState
 import my.feeder.app.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -92,6 +94,16 @@ fun RouteDetailScreen(
         schedules[effectiveCode.trim().uppercase()] ?: emptyList()
     }
     val isPinned = remember(pinned, effectiveCode) { GtfsRepository.isPinned(effectiveCode) }
+
+    // Proactively refresh live AVL directly from Prasarana's per-route endpoint.
+    // Immediately loads vehicles for routes omitted by data.gov.my (like T507).
+    LaunchedEffect(effectiveCode) {
+        GtfsRepository.refreshRoute(effectiveCode)
+        while (isActive) {
+            delay(15_000L)
+            GtfsRepository.refreshRoute(effectiveCode)
+        }
+    }
 
     val nextBus = remember(buses) {
         buses.minByOrNull { if (it.etaMinutes < 0) Int.MAX_VALUE else it.etaMinutes }

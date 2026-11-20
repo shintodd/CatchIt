@@ -31,7 +31,7 @@ object AlertScheduleManager {
     private const val DEFAULT_END_MINUTE = 10
 
     data class ScheduleConfig(
-        val enabled: Boolean = true,
+        val enabled: Boolean = false,
         val startHour: Int = DEFAULT_START_HOUR,
         val startMinute: Int = DEFAULT_START_MINUTE,
         val endHour: Int = DEFAULT_END_HOUR,
@@ -55,7 +55,7 @@ object AlertScheduleManager {
             val p = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs = p
             _config.value = ScheduleConfig(
-                enabled = p.getBoolean(KEY_ENABLED, true),
+                enabled = p.getBoolean(KEY_ENABLED, false),
                 startHour = p.getInt(KEY_START_HOUR, DEFAULT_START_HOUR),
                 startMinute = p.getInt(KEY_START_MINUTE, DEFAULT_START_MINUTE),
                 endHour = p.getInt(KEY_END_HOUR, DEFAULT_END_HOUR),

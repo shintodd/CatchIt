@@ -132,55 +132,76 @@ fun OemWizardScreen(
                 }
             }
 
-            // Step 1: System Battery Optimization Exemption
+            // Unified One-Tap Setup Card
             item {
-                OemStepCard(
-                    stepNumber = "1",
-                    title = "Set Battery to 'No Restrictions'",
-                    description = "Prevents Android Doze from putting CatchIt to sleep when the bus is approaching.",
-                    isDone = isUnrestricted,
-                    buttonText = if (isUnrestricted) "Whitelisted" else "Grant Exemption",
-                    onAction = {
-                        OemBatteryHelper.requestIgnoreBatteryOptimizations(context)
-                        isUnrestricted = OemBatteryHelper.isIgnoringBatteryOptimizations(context)
-                        Toast.makeText(context, "Battery optimization exemption requested", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(Radius.lg),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                color = if (isUnrestricted) Color(0xFF15803D) else MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(Radius.sm),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    LucideIcon(
+                                        drawableId = if (isUnrestricted) R.drawable.ic_lucide_check else R.drawable.ic_lucide_bell,
+                                        contentDescription = "Alarm Status",
+                                        size = 20.dp,
+                                        tint = if (isUnrestricted) Color.White else MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (isUnrestricted) "Background Delivery Active" else "One-Tap Setup Required",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isUnrestricted) "Android Doze whitelist granted" else "Tap below to allow background running",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
 
-            // Step 2: OEM Autostart
-            item {
-                OemStepCard(
-                    stepNumber = "2",
-                    title = "Enable Autostart & Background Launch",
-                    description = when (manufacturer) {
-                        OemBatteryHelper.Manufacturer.XIAOMI -> "In MIUI Security app: Permissions → Autostart → Enable CatchIt."
-                        OemBatteryHelper.Manufacturer.SAMSUNG -> "In Device Care: Battery → Background usage limits → Never sleeping apps → Add CatchIt."
-                        else -> "In Phone Manager: App management → Auto-launch → Allow CatchIt."
-                    },
-                    isDone = isStep2Done,
-                    buttonText = if (isStep2Done) "Configured" else "Open System Settings",
-                    onAction = {
-                        OemBatteryHelper.openAutostartSettings(context)
-                        isStep2Done = true
-                        Toast.makeText(context, "Opening autostart settings", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
+                        Text(
+                            text = "Tapping the button prompts Android's native system dialog to let CatchIt run in the background. Tap 'Allow' and alarms are guaranteed.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 18.sp
+                        )
 
-            // Step 3: Recent Apps Lock
-            item {
-                OemStepCard(
-                    stepNumber = "3",
-                    title = "Lock in Recent Apps (Recommended)",
-                    description = "Open your app switcher, long-press the CatchIt card, and tap the Padlock icon so 'Clear All' never kills it.",
-                    isDone = isStep3Done,
-                    buttonText = if (isStep3Done) "Completed" else "Got It",
-                    onAction = {
-                        isStep3Done = true
-                        Toast.makeText(context, "App lock instructions noted", Toast.LENGTH_SHORT).show()
+                        Button(
+                            onClick = {
+                                OemBatteryHelper.launchOneTapSetup(context)
+                                isUnrestricted = OemBatteryHelper.isIgnoringBatteryOptimizations(context)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isUnrestricted) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(Radius.md),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Text(
+                                text = if (isUnrestricted) "✓ Background Alarms Guaranteed" else "Allow Background Running in 1 Tap",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
                     }
-                )
+                }
             }
 
             // Finish CTA
@@ -188,8 +209,8 @@ fun OemWizardScreen(
                 Button(
                     onClick = onComplete,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     shape = RoundedCornerShape(Radius.md),
                     modifier = Modifier
@@ -197,7 +218,7 @@ fun OemWizardScreen(
                         .defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text(
-                        text = "Complete & Return to Commute",
+                        text = "Return to Commute",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )

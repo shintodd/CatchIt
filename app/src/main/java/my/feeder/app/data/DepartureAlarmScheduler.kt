@@ -7,13 +7,14 @@ import android.content.Intent
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
+import my.feeder.app.MainActivity
 
 /**
  * Uses Android AlarmManager to wake the device from Doze mode at precise 30-second
  * intervals while departure alarms are armed.
  *
- * This prevents JobScheduler / WorkManager background deferrals where notifications
- * can be delayed by 5-15 minutes when the phone screen is off.
+ * Uses setAlarmClock() to completely bypass Doze mode 15-minute batching restrictions
+ * without needing ongoing persistent foreground notifications.
  */
 object DepartureAlarmScheduler {
     private const val TAG = "DepartureAlarmScheduler"
@@ -21,7 +22,9 @@ object DepartureAlarmScheduler {
 
     fun schedule(context: Context, delayMs: Long = 0L) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, DepartureAlarmReceiver::class.java)
+        val intent = Intent(context, DepartureAlarmReceiver::class.java).apply {
+            action = "my.feeder.app.ALARM_TICK"
+        }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             5001,
@@ -29,23 +32,32 @@ object DepartureAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerAt = SystemClock.elapsedRealtime() + delayMs
+        val triggerAtElapsed = SystemClock.elapsedRealtime() + delayMs
+        val triggerAtWall = System.currentTimeMillis() + delayMs
+
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (am.canScheduleExactAlarms()) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+            // AlarmClockInfo bypasses Android Doze 9-15 min throttling completely
+            val showIntent = PendingIntent.getActivity(
+                context,
+                0,
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            am.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerAtWall, showIntent),
+                pendingIntent
+            )
+        } catch (e: Exception) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtElapsed, pendingIntent)
                 } else {
-                    am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+                    am.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtElapsed, pendingIntent)
                 }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
-            } else {
-                am.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
-            }
-        } catch (se: SecurityException) {
-            // Android 12+ fallback when exact alarm permission is denied
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+            } catch (se: Exception) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtElapsed, pendingIntent)
+                }
             }
         }
     }
@@ -57,7 +69,9 @@ object DepartureAlarmScheduler {
     fun cancel(context: Context) {
         DepartureAlarmService.stop(context)
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, DepartureAlarmReceiver::class.java)
+        val intent = Intent(context, DepartureAlarmReceiver::class.java).apply {
+            action = "my.feeder.app.ALARM_TICK"
+        }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             5001,
@@ -66,6 +80,7 @@ object DepartureAlarmScheduler {
         )
         if (pendingIntent != null) {
             am.cancel(pendingIntent)
+            pendingIntent.cancel()
         }
     }
 }

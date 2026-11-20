@@ -33,6 +33,7 @@ import my.feeder.app.data.AppUpdateManager
 import my.feeder.app.data.DepartureAlarmStore
 import my.feeder.app.data.GtfsRepository
 import my.feeder.app.data.ThemeManager
+import my.feeder.app.util.OemBatteryHelper
 import my.feeder.app.data.UpdateStatus
 import my.feeder.app.ui.theme.*
 
@@ -372,20 +373,27 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(Spacing.md))
 
-                    // The one CTA on this screen — solid, full width, unmissable.
+                    var isBatteryWhitelisted by remember {
+                        mutableStateOf(OemBatteryHelper.isIgnoringBatteryOptimizations(context))
+                    }
+
+                    // Single 1-tap button: pops native Android whitelist dialog directly
                     Button(
-                        onClick = onOpenOemWizard,
+                        onClick = {
+                            OemBatteryHelper.launchOneTapSetup(context)
+                            isBatteryWhitelisted = OemBatteryHelper.isIgnoringBatteryOptimizations(context)
+                        },
                         shape = RoundedCornerShape(Radius.md),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = if (isBatteryWhitelisted) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 48.dp)
                     ) {
                         Text(
-                            text = "Set up battery whitelist",
+                            text = if (isBatteryWhitelisted) "✓ Background Alarms Guaranteed" else "One-Tap Background Setup",
                             fontWeight = FontWeight.Bold,
                             fontSize = TypeSize.body
                         )

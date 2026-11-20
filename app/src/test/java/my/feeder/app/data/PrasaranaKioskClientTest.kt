@@ -1,6 +1,7 @@
 package my.feeder.app.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrasaranaKioskClientTest {
@@ -55,5 +56,31 @@ class PrasaranaKioskClientTest {
         assertEquals("T400B", PrasaranaKioskClient.stripDirectionSuffix("T4001"))
         assertEquals("T512B", PrasaranaKioskClient.stripDirectionSuffix("T5121"))
         assertEquals("T810", PrasaranaKioskClient.stripDirectionSuffix("T810B"))
+    }
+
+    @Test
+    fun `generateRouteCandidates generates operator tokens for all route families`() {
+        val t507 = PrasaranaKioskClient.generateRouteCandidates("T507")
+        assertTrue(t507.contains("T5070"))
+
+        val t400 = PrasaranaKioskClient.generateRouteCandidates("T400")
+        assertTrue(t400.contains("T4000"))
+        assertTrue(t400.contains("T4001"))
+
+        val t821b = PrasaranaKioskClient.generateRouteCandidates("T821B")
+        assertTrue(t821b.contains("T8211"))
+
+        val r420 = PrasaranaKioskClient.generateRouteCandidates("420")
+        assertTrue(r420.contains("U4200"))
+        assertTrue(r420.contains("420"))
+
+        val pj01 = PrasaranaKioskClient.generateRouteCandidates("PJ01")
+        assertTrue(pj01.contains("P0010"))
+
+        val sa07 = PrasaranaKioskClient.generateRouteCandidates("SA07")
+        assertTrue(sa07.contains("S4070"))
+
+        val p101 = PrasaranaKioskClient.generateRouteCandidates("101")
+        assertTrue(p101.contains("101"))
     }
 }

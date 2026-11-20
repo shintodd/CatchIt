@@ -56,6 +56,7 @@ object OemBatteryHelper {
         val intents = listOf(
             // Xiaomi HyperOS / MIUI
             Intent().setComponent(ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
+            Intent().setComponent(ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.SecondaryAutoStartManagementActivity")),
             Intent("miui.intent.action.OP_AUTO_START").addCategory(Intent.CATEGORY_DEFAULT),
             Intent().setComponent(ComponentName("com.miui.powerkeeper", "com.miui.powerkeeper.ui.HiddenAppsConfigActivity")).apply {
                 putExtra("package_name", context.packageName)
